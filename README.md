@@ -4,12 +4,10 @@
 
 1. Index Genome Reference
 
-
-
 ```bash
 
 module load bwa
-bwa index -a is MT246667.fasta
+bwa index -a is sars_cov_2.fasta
 
 ```
 

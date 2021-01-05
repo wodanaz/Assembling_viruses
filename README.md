@@ -267,7 +267,7 @@ for file in *bqsr2depthbed.sh ; do sbatch $file ; done
 
 Now, let's make a table:
 
-```
+```bash
 ls *depth.bed > depths.list
 wc -l depths.list
 

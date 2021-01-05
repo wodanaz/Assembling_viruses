@@ -6,7 +6,7 @@ $usage="
 
 data_compiler.pl : 
 
-assembles data into a single table
+assembles data into a single table, this program was originally created by Misha Matz for compiling RNAseq count data. I modified it for compiling tables.
 
 Arguments:
 arg1: [pattern to counts files] 

@@ -5,6 +5,9 @@
 1. Index Genome Reference
 
 ```bash
+# Go to the Interactive Node:
+
+srun -p interactive --pty bash
 
 module load bwa
 bwa index -a is sars_cov_2.fasta

@@ -68,8 +68,8 @@ module load bwa
 
 
 for i in `cat reads2.list`; do
-rootA=`echo ${root} | cut -d'$' -f 1`;
-rootB=`echo ${root} | cut -d'$' -f 2`;
+rootA=`echo ${i} | cut -d'$' -f 1`;
+rootB=`echo ${i} | cut -d'$' -f 2`;
 root=`basename $rootA _trimmed.fq.gz`;
 root2=`basename $root _R1_001`;
 echo '#!/usr/bin/env bash' > $root.bwa.sh;

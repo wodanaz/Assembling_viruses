@@ -77,8 +77,8 @@ root=`basename $rootA _trimmed.fq.gz`;
 root2=`basename $root _R1_001`;
 echo '#!/usr/bin/env bash' > $root.bwa.sh;
 echo "#SBATCH -N 1" >> $root.bwa.sh;
-echo "cat $rootA $rootB > $root.fq.gz" > $root.bwa.sh;
-echo "bwa mem sars_cov_2.fasta -R '@RG\tID:ID_${root2}\tPU:PU_${root2}\tSM:${root2}\tLB:${root}' $root.fq.gz  > $root2.sam"  >> $root.bwa.sh;
+echo "cat $rootA $rootB > $root2.fq.gz" >> $root.bwa.sh;
+echo "bwa mem sars_cov_2.fasta -R '@RG\tID:ID_${root2}\tPU:PU_${root2}\tSM:${root2}\tLB:${root}' $root2.fq.gz  > $root2.sam"  >> $root.bwa.sh;
 done
 
 for file in *bwa.sh ; do sbatch $file ; done

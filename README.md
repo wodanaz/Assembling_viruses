@@ -209,7 +209,7 @@ for file in *bam2bam2.sh ; do sbatch $file ; done
 
 ```
 
-2. Base recalibration. First pass of the Base Quality Score Recalibration (BQSR) -- Generates recalibration table based on various
+4. Base recalibration. First pass of the Base Quality Score Recalibration (BQSR) -- Generates recalibration table based on various
 user-specified covariates (such as read group, reported quality score, machine cycle, and nucleotide context).
 
 
@@ -240,7 +240,7 @@ for file in *bam2br.sh ; do sbatch $file ; done
 ```
 
 
-3. APPLY BQSR (Apply a linear base quality recalibration model trained with the BaseRecalibrator tool)
+5. APPLY BQSR (Apply a linear base quality recalibration model trained with the BaseRecalibrator tool)
 
 ```bash
 for i in `cat bams2.list`; do
@@ -257,7 +257,7 @@ for file in *bam2bqsr.sh ; do sbatch $file ; done
 ```
 
 
-4. Collect statistics: Produces a summary of alignment metrics from a SAM or BAM file
+6. Collect statistics: Produces a summary of alignment metrics from a SAM or BAM file
 
 
 ```bash
@@ -314,7 +314,7 @@ sort -k1,1 -V table.tab > table.sort.tab
 
 ```
 
-5. HAPLOTYPE CALLER: Call germline SNPs and indels via local re-assembly of haplotypes
+7. HAPLOTYPE CALLER: Call germline SNPs and indels via local re-assembly of haplotypes
 
 
 ```bash
@@ -333,7 +333,7 @@ for file in *bqsr2vcf.sh ; do sbatch $file ; done
 ```
 
 
-6. FILTER VCFs (Filter variant calls based on INFO and/or FORMAT annotations)
+8. FILTER VCFs (Filter variant calls based on INFO and/or FORMAT annotations)
 
 ```
 ls *gatk.vcf > vcfs.list
@@ -351,7 +351,7 @@ for file in *vcf2filt.sh ; do sbatch $file ; done
 ```
 
 
-7. GENOTYPE TABLE (Extract specified fields for each variant in a VCF file to a tab-delimited table, which may be easier to work with than
+9. GENOTYPE TABLE (Extract specified fields for each variant in a VCF file to a tab-delimited table, which may be easier to work with than
 a VCF)
 
 
@@ -372,7 +372,7 @@ for file in *vcf2tab.sh ; do sbatch $file ; done
 ```
 
 
-8. Make final consensus fasta sequence using the SNPs in the vcf file.
+10. Make final consensus fasta sequence using the SNPs in the vcf file.
 
 
 
@@ -439,7 +439,7 @@ for file in *vcf2fasta.sh ; do sbatch $file ; done
 ```
 
 
-9. Compile all tab tables into one for depth and genotype
+11. Compile all tab tables into one for depth and genotype
 
 
 make sure you doanloaded genotype_compiler.pl and depth_compiler.pl

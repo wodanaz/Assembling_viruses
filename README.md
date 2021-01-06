@@ -63,7 +63,10 @@ S29_S29_R1_001_trimmed.fq.gz$Plate1_A7_S49_R1_001_trimmed.fq.gz
 
 ```
 
+Now, we need to concatenate the two runs into a single fq file keeping the sample name from the most recent run:
+
 ```bash
+
 module load bwa
 
 
@@ -74,7 +77,8 @@ root=`basename $rootA _trimmed.fq.gz`;
 root2=`basename $root _R1_001`;
 echo '#!/usr/bin/env bash' > $root.bwa.sh;
 echo "#SBATCH -N 1" >> $root.bwa.sh;
-echo "bwa mem sars_cov_2.fasta -R '@RG\tID:ID_${root2}\tPU:PU_${root2}\tSM:${root2}\tLB:${root}' $rootA $rootB > $root2.sam"  >> $root.bwa.sh;
+echo "cat $rootA $rootB > $root.fq.gz" > $root.bwa.sh;
+echo "bwa mem sars_cov_2.fasta -R '@RG\tID:ID_${root2}\tPU:PU_${root2}\tSM:${root2}\tLB:${root}' $root.fq.gz  > $root2.sam"  >> $root.bwa.sh;
 done
 
 for file in *bwa.sh ; do sbatch $file ; done

@@ -40,16 +40,41 @@ for file in *trimgalore.sh ; do sbatch $file ; done
 
 
 ```bash
+# need to crate a dual list of the complementary samples from the first run
+
+nano reads2.list
+S14_S14_R1_001_trimmed.fq.gz$Plate1_A3_S17_R1_001_trimmed.fq.gz
+S15_S15_R1_001_trimmed.fq.gz$Plate1_C3_S19_R1_001_trimmed.fq.gz
+S16_S16_R1_001_trimmed.fq.gz$Plate1_D3_S20_R1_001_trimmed.fq.gz
+S17_S17_R1_001_trimmed.fq.gz$Plate1_E3_S21_R1_001_trimmed.fq.gz
+S18_S18_R1_001_trimmed.fq.gz$Plate1_F3_S22_R1_001_trimmed.fq.gz
+S19_S19_R1_001_trimmed.fq.gz$Plate1_G3_S23_R1_001_trimmed.fq.gz
+S20_S20_R1_001_trimmed.fq.gz$Plate1_A6_S41_R1_001_trimmed.fq.gz
+S21_S21_R1_001_trimmed.fq.gz$Plate1_B6_S42_R1_001_trimmed.fq.gz
+S22_S22_R1_001_trimmed.fq.gz$Plate1_A4_S25_R1_001_trimmed.fq.gz
+S23_S23_R1_001_trimmed.fq.gz$Plate1_B4_S26_R1_001_trimmed.fq.gz
+S24_S24_R1_001_trimmed.fq.gz$Plate1_C6_S43_R1_001_trimmed.fq.gz
+S25_S25_R1_001_trimmed.fq.gz$Plate1_D6_S44_R1_001_trimmed.fq.gz
+S26_S26_R1_001_trimmed.fq.gz$Plate1_C4_S27_R1_001_trimmed.fq.gz
+S27_S27_R1_001_trimmed.fq.gz$Plate1_F6_S46_R1_001_trimmed.fq.gz
+S28_S28_R1_001_trimmed.fq.gz$Plate1_H6_S48_R1_001_trimmed.fq.gz
+S29_S29_R1_001_trimmed.fq.gz$Plate1_A7_S49_R1_001_trimmed.fq.gz
+
+
+```
+
+```bash
 module load bwa
 
-ls *_trimmed.fq.gz > reads2.list
 
 for i in `cat reads2.list`; do
-root=`basename $i _trimmed.fq.gz`;
+rootA=`echo ${root} | cut -d'$' -f 1`;
+rootB=`echo ${root} | cut -d'$' -f 2`;
+root=`basename $rootA _trimmed.fq.gz`;
 root2=`basename $root _R1_001`;
 echo '#!/usr/bin/env bash' > $root.bwa.sh;
 echo "#SBATCH -N 1" >> $root.bwa.sh;
-echo "bwa mem sars_cov_2.fasta -R '@RG\tID:ID_${root2}\tPU:PU_${root2}\tSM:${root2}\tLB:${root}' $i > $root2.sam"  >> $root.bwa.sh;
+echo "bwa mem sars_cov_2.fasta -R '@RG\tID:ID_${root2}\tPU:PU_${root2}\tSM:${root2}\tLB:${root}' $rootA $rootB > $root2.sam"  >> $root.bwa.sh;
 done
 
 for file in *bwa.sh ; do sbatch $file ; done

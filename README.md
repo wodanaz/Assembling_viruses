@@ -49,7 +49,7 @@ root=`basename $i _trimmed.fq.gz`;
 root2=`basename $root _R1_001`;
 echo '#!/usr/bin/env bash' > $root.bwa.sh;
 echo "#SBATCH -N 1" >> $root.bwa.sh;
-echo "bwa mem MT246667.fasta -R '@RG\tID:ID_${root2}\tPU:PU_${root2}\tSM:${root2}\tLB:${root}' $i > $root2.sam"  >> $root.bwa.sh;
+echo "bwa mem sars_cov_2.fasta -R '@RG\tID:ID_${root2}\tPU:PU_${root2}\tSM:${root2}\tLB:${root}' $i > $root2.sam"  >> $root.bwa.sh;
 done
 
 for file in *bwa.sh ; do sbatch $file ; done

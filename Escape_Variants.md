@@ -49,11 +49,11 @@ ls *_trimmed.fq.gz > reads2.list
 for i in `cat reads2.list`; do
 root=`basename $i _trimmed.fq.gz`;
 root2=`basename $root _R1_001`;
-#root3=`echo ${root} | cut -d'_' -f 3`;
+root3=`echo ${root} | cut -d'_' -f 1`;
 echo '#!/usr/bin/env bash' > $root.bwa.sh;
 echo "#SBATCH -N 1" >> $root.bwa.sh;
 #echo "#SBATCH --mem 6G" >> $root.bwa.sh;
-echo "bwa mem MT246667.fasta -R '@RG\tID:ID_${root2}\tPU:PU_${root2}\tSM:${root2}\tLB:${root}' $i > $root2.sam"  >> $root.bwa.sh;
+echo "bwa mem MT246667.fasta -R '@RG\tID:ID_${root3}\tPU:PU_${root3}\tSM:${root3}\tLB:${root}' $i > $root3.sam"  >> $root.bwa.sh;
 done
 
 

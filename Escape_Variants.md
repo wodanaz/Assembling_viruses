@@ -57,6 +57,9 @@ echo "bwa mem MT246667.fasta -R '@RG\tID:ID_${root2}\tPU:PU_${root2}\tSM:${root2
 done
 
 
+
+for file in *bwa.sh ; do sbatch $file ; done
+
 ```
 
 

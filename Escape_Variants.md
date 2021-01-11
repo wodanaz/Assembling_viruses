@@ -88,10 +88,11 @@ for file in *sam2bam.sh ; do sbatch $file ; done
 module load picard-tools
 java -jar /nfs/software/helmod/apps/Core/picard-tools/2.4.1-gcb01/picard.jar  CreateSequenceDictionary R=MT246667.fasta O=MT246667.dict 
 
-
 module load samtools
 
-samtools faidx sars_cov_2.fasta
+samtools faidx MT246667.fasta
+
+
 ```
 
 # GATK starts here

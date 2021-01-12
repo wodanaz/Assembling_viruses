@@ -306,7 +306,7 @@ wc -l depths.list
 
 for i in `cat depths.list`; do
 root=`basename $i .depth.bed`;
-percent=`awk '{ if ( $3 == 0 )  count++ } END { print 100 - ( count*100 / 29871 ) }' $i `
+percent=`awk '{ if ( $3 == 0 )  count++ } END { print 100 - ( count*100 / 29903 ) }' $i `
 echo $root $percent >> table.tab
 done 
 

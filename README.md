@@ -391,7 +391,7 @@ root=`basename $i .depth.bed`;
 echo '#!/usr/bin/env bash' > $root.depth2maskbed.sh;
 echo "#SBATCH -N 1" >> $root.depth2maskbed.sh;
 echo "awk '{ if ( \$3 == 0 )  print \"NC_045512\" \"\t\" \$2 \"\t\" \$2 }' ${i} > $root.mask.bed "  >> $root.depth2maskbed.sh;
-echo "bedtools merge -i $root.mask.bed | awk '{ print \$1 \"\t\" \$2  \"\t\" \$3 - 1  }' > $root.merged.bed " >> $root.depth2maskbed.sh;
+echo "bedtools merge -i $root.mask.bed | awk '{ print \$1 \"\t\" \$2 + 1   \"\t\" \$3 - 1 }' > $root.merged.bed " >> $root.depth2maskbed.sh;
 #echo "bedtools maskfasta  -fi $root.fasta -bed $root.merged.bed  -fo $root.masked.fasta " >> $root.depth2maskbed.sh;
 done 
 
@@ -409,14 +409,30 @@ for file in *depth2maskbed.sh ; do sbatch $file ; done
 head *merged.bed
 
 ```
-and check there aren't any bed files that have a 0 in end position in the first line:
+
+
+For some ridiculous reason, bedtools messes up the first and last base when merging and they must be edited 
+Here, a general rule to change the positions affected
 
 for example:
 
-NC_045512 1 0
-NC_045512 200 290
+MT246667	1	
 
-If so, just edit 0 for 1 using nano
+MT246667	2	0
+
+MT246667	29872	29870
+
+to fix, use sed.
+
+
+```bash
+
+sed -ri 's/MT246667\t29872\t29870/MT246667\t29870\t29871/g' *merged.bed
+sed -ri 's/MT246667\t2\t0/MT246667\t0\t1/g' *merged.bed
+sed -ri 's/MT246667\t1\t/MT246667\t0\t/g' *merged.bed
+
+
+
 
 
 

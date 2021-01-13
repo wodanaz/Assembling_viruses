@@ -75,10 +75,11 @@ rootA=`echo ${i} | cut -d'$' -f 1`;
 rootB=`echo ${i} | cut -d'$' -f 2`;
 root=`basename $rootA _trimmed.fq.gz`;
 root2=`basename $root _R1_001`;
+root3=`echo ${root2} | cut -d'_' -f 1`;
 echo '#!/usr/bin/env bash' > $root.bwa.sh;
 echo "#SBATCH -N 1" >> $root.bwa.sh;
 echo "cat $rootA $rootB > $root2.fq.gz" >> $root.bwa.sh;
-echo "bwa mem sars_cov_2.fasta -R '@RG\tID:ID_${root2}\tPU:PU_${root2}\tSM:${root2}\tLB:${root}' $root2.fq.gz  > $root2.sam"  >> $root.bwa.sh;
+echo "bwa mem sars_cov_2.fasta -R '@RG\tID:ID_${root2}\tPU:PU_${root2}\tSM:${root2}\tLB:${root}' $root2.fq.gz  > $root3.sam"  >> $root.bwa.sh;
 done
 
 for file in *bwa.sh ; do sbatch $file ; done

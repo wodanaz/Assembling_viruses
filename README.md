@@ -412,7 +412,7 @@ head *merged.bed
 
 
 For some ridiculous reason, bedtools messes up the first and last base when merging and they must be edited 
-Here, a general rule to change the positions affected
+Here, a general rule to change the positions affected.
 
 for example:
 
@@ -426,6 +426,13 @@ to fix, use sed.
 sed -ri 's/NC_045512\t1\t/NC_045512\t0\t/g' *merged.bed
 
 ```
+
+
+
+For this script to work properly, please make sure your fasta file (reference) header title corresponds to the first column in the merged bed file.
+in other words, the first line in the fasta file should be: 
+
+>NC_045512
 
 ```bash
 ls *gatk.filt.vcf > gfilts.list

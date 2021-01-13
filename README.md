@@ -425,7 +425,7 @@ to fix, use sed.
 
 sed -ri 's/NC_045512\t1\t/NC_045512\t0\t/g' *merged.bed
 
-
+```
 
 ```bash
 ls *gatk.filt.vcf > gfilts.list

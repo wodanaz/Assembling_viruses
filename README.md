@@ -416,23 +416,14 @@ Here, a general rule to change the positions affected
 
 for example:
 
-MT246667	1	
-
-MT246667	2	0
-
-MT246667	29872	29870
+NC_045512	1	
 
 to fix, use sed.
 
 
 ```bash
 
-sed -ri 's/MT246667\t29872\t29870/MT246667\t29870\t29871/g' *merged.bed
-sed -ri 's/MT246667\t2\t0/MT246667\t0\t1/g' *merged.bed
-sed -ri 's/MT246667\t1\t/MT246667\t0\t/g' *merged.bed
-
-
-
+sed -ri 's/NC_045512\t1\t/NC_045512\t0\t/g' *merged.bed
 
 
 

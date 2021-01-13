@@ -79,7 +79,7 @@ root3=`echo ${root2} | cut -d'_' -f 1`;
 echo '#!/usr/bin/env bash' > $root.bwa.sh;
 echo "#SBATCH -N 1" >> $root.bwa.sh;
 echo "cat $rootA $rootB > $root2.fq.gz" >> $root.bwa.sh;
-echo "bwa mem sars_cov_2.fasta -R '@RG\tID:ID_${root2}\tPU:PU_${root2}\tSM:${root2}\tLB:${root}' $root2.fq.gz  > $root3.sam"  >> $root.bwa.sh;
+echo "bwa mem sars_cov_2.fasta -R '@RG\tID:ID_${root3}\tPU:PU_${root3}\tSM:${root3}\tLB:${root}' $root2.fq.gz  > $root3.sam"  >> $root.bwa.sh;
 done
 
 for file in *bwa.sh ; do sbatch $file ; done

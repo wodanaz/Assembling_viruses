@@ -453,6 +453,18 @@ for file in *vcf2fasta.sh ; do sbatch $file ; done
 make sure you doanloaded genotype_compiler.pl and depth_compiler.pl
 
 ```bash
+
+
+ls *.gatk.filt.vcf > vcfs2.list
+wc -l vcfs2.list
+
+for i in `cat vcfs2.list`; do root=`basename $i .gatk.filt.vcf`; echo $root ; bcftools query -f '%POS %ALT\n' $i | sed -r 's/ /\t/g' > $root.filt.tab ;  done
+for i in `cat vcfs2.list`; do root=`basename $i .gatk.filt.vcf`; echo $root ; bcftools query -f '%POS [%AD]\n' $i | sed -r 's/,/\t/g' | awk '{ sum = $2 + $3 ; print $1 "\t" $3 / sum }' > $root.depth.tab ;done
+
+
+
+
+
 perl depth_compiler.pl *.depth.tab > alldepths.tab
 cp alldepths.tab alldepths.backup.tab
 sed -r 's/ /\t/g'  alldepths.tab | sed -r 's/.depth.tab//g' | sort -k1,1n > alldepths.final.tab 

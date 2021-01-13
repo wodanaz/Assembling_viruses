@@ -336,7 +336,7 @@ for file in *bqsr2vcf.sh ; do sbatch $file ; done
 
 8. FILTER VCFs (Filter variant calls based on INFO and/or FORMAT annotations)
 
-```
+```bash
 ls *gatk.vcf > vcfs.list
 
 for i in `cat vcfs.list`; do

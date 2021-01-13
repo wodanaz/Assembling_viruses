@@ -367,7 +367,7 @@ for i in `cat depths.list`; do
 root=`basename $i .depth.bed`;
 echo '#!/usr/bin/env bash' > $root.depth2maskbed.sh;
 echo "#SBATCH -N 1" >> $root.depth2maskbed.sh;
-echo "awk '{ if ( \$3 == 0 )  print \"NC_045512\" \"\t\" \$2 \"\t\" \$2 }' ${i} > $root.mask.bed "  >> $root.depth2maskbed.sh;
+echo "awk '{ if ( \$3 == 0 )  print \"MT246667\" \"\t\" \$2 \"\t\" \$2 }' ${i} > $root.mask.bed "  >> $root.depth2maskbed.sh;
 echo "bedtools merge -i $root.mask.bed | awk '{ print \$1 \"\t\" \$2  \"\t\" \$3 - 1  }' > $root.merged.bed " >> $root.depth2maskbed.sh;
 #echo "bedtools maskfasta  -fi $root.fasta -bed $root.merged.bed  -fo $root.masked.fasta " >> $root.depth2maskbed.sh;
 done 

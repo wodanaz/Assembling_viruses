@@ -1,4 +1,4 @@
-# Assembling Viruses
+# Examining escape mutations among viruses
 
 ### Genome Mapping Experiment 4 with BWA, trimmed TrimGalore and GATK
 

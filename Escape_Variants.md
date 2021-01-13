@@ -313,14 +313,14 @@ for file in *bqsr2vcf.sh ; do sbatch $file ; done
 
 8. FILTER VCFs (Filter variant calls based on INFO and/or FORMAT annotations)
 
-```
+```bash
 ls *gatk.vcf > vcfs.list
 
 for i in `cat vcfs.list`; do
 root=`basename $i .gatk.vcf`;
 echo '#!/usr/bin/env bash' > $root.vcf2filt.sh;
 echo "#SBATCH -N 1" >> $root.vcf2filt.sh;
-echo "gatk VariantFiltration -R sars_cov_2.fasta -V $i -O $root.gatk.filt.vcf --filter-expression 'QD < 2.0' --filter-name QD2 --filter-expression 'FS > 60.0'  --filter-name FS60 " >> $root.vcf2filt.sh;
+echo "gatk VariantFiltration -R MT246667.fasta -V $i -O $root.gatk.filt.vcf --filter-expression 'QD < 2.0' --filter-name QD2 --filter-expression 'FS > 60.0'  --filter-name FS60 " >> $root.vcf2filt.sh;
 done
 
 

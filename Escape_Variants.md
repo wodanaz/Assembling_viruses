@@ -407,7 +407,7 @@ echo '#!/usr/bin/env bash' > $root.vcf2fasta.sh;
 echo "#SBATCH -N 1" >> $root.vcf2fasta.sh;
 echo "bcftools view -Oz $i > $i.gz " >> $root.vcf2fasta.sh;
 echo "bcftools index $i.gz " >> $root.vcf2fasta.sh;
-echo "bcftools norm -f sars_cov_2.fasta $i.gz -Ob -o $root.norm.bcf " >> $root.vcf2fasta.sh;
+echo "bcftools norm -f MT246667.fasta $i.gz -Ob -o $root.norm.bcf " >> $root.vcf2fasta.sh;
 echo "bcftools consensus -m $root.merged.bed -f MT246667.fasta  -p ${root}_ -s ${root} -H A $i.gz > $root.masked.fasta " >> $root.vcf2fasta.sh;
 done
 

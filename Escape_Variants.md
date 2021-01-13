@@ -436,7 +436,7 @@ for file in *vcf2fasta.sh ; do sbatch $file ; done
 11. Compile all tab tables into one for depth and genotype
 
 
-make sure you doanloaded genotype_compiler.pl and depth_compiler.pl
+make sure you downloaded genotype_compiler.pl and depth_compiler.pl
 
 ```bash
 

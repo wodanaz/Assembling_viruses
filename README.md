@@ -64,6 +64,7 @@ S29_S29_R1_001_trimmed.fq.gz$Plate1_A7_S49_R1_001_trimmed.fq.gz
 ```
 
 Now, we need to concatenate the two runs into a single fq file keeping the sample name from the most recent run:
+Note: remember to put these two files in the same directory.
 
 ```bash
 

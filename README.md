@@ -485,6 +485,23 @@ sed -r 's/ /\t/g'  allgenotypes.tab | sed -r 's/.filt.tab//g' | sort -k1,1n > al
 ```
 
 
+To align masked alignments using MAFFT (it can be done locally after downloading sequences).
+
+
+```bash
+cat *masked.fasta > exp4.data.fasta
+mafft  --auto --clustalout --reorder "exp4.data.fasta" > out.clustal
+
+# if thousands of alignments are in directory maff --aut can be changed for:
+
+mafft --large --globalpair --thread n  --clustalout --reorder "exp4.data.fasta" > out.clustal
+
+# and edit the nmber of threads
+
+
+
+```
+
 
 
 

@@ -494,9 +494,9 @@ mafft  --auto --clustalout --reorder "exp4.data.fasta" > out.clustal
 
 # if thousands of alignments are in directory maff --aut can be changed for:
 
-mafft --large --globalpair --thread n  --clustalout --reorder "exp4.data.fasta" > out.clustal
+mafft --globalpair --thread n  --clustalout --reorder "exp4.data.fasta" > out.clustal
 
-# and edit the nmber of threads
+# and edit the nmber of threads.
 
 
 

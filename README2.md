@@ -177,6 +177,7 @@ for i in `cat dedup.list`; do
 root=`basename $i .dedup.bam`;
 echo '#!/usr/bin/env bash' > $root.bam2vcf.sh;
 echo "#SBATCH -N 1" >> $root.bam2vcf.sh;
+echo "#SBATCH -J bam2vcf1" >> $root.bam2vcf.sh;
 echo "bcftools mpileup -Ou -f sars_cov_2.fasta $i --annotate FORMAT/DPR > $root.bcf " >> $root.bam2vcf.sh;
 echo "bcftools call -vm --ploidy 1 $root.bcf > $root.raw.vcf " >> $root.bam2vcf.sh;
 done
@@ -196,6 +197,7 @@ wc -l vcfs.list
 for i in `cat vcfs.list`; do
 root=`basename $i .raw.vcf`;
 echo '#!/usr/bin/env bash' > $root.vcf2filt.sh;
+echo "#SBATCH -J vcf2filt" >> $root.vcf2filt.sh;
 echo "#SBATCH -N 1" >> $root.vcf2filt.sh;
 echo "bcftools view -i '%QUAL>=20 && DP>5' -Oz $i > $root.filt.vcf.gz " >> $root.vcf2filt.sh;
 echo "bcftools index $root.filt.vcf.gz " >> $root.vcf2filt.sh;
@@ -220,6 +222,7 @@ ls *dedup.bam > dedup.list
 for i in `cat dedup.list`; do
 root=`basename $i .dedup.bam`;
 echo '#!/usr/bin/env bash' > $root.bam2bam2.sh;
+echo "#SBATCH -J bam2bam2" >> $root.bam2bam2.sh;
 echo "#SBATCH -N 1" >> $root.bam2bam2.sh;
 echo "java -Xmx7g -jar /nfs/software/helmod/apps/Core/picard-tools/2.4.1-gcb01/picard.jar AddOrReplaceReadGroups I=$i O=$root.bam2 RGSM=$root RGPU=unit1 RGLB=lib_${root} RGPL=ILLUMINA" >> $root.bam2bam2.sh;
 done 
@@ -249,6 +252,7 @@ for i in `cat bams2.list`; do
 root=`basename $i .bam2`;
 echo '#!/usr/bin/env bash' > $root.bam2br.sh;
 echo "#SBATCH -N 1" >> $root.bam2br.sh;
+echo "#SBATCH -J bam2br" >> $root.bam2br.sh;
 echo "tabix -p vcf $root.filt.vcf.gz -f" >> $root.bam2br.sh;
 echo "gatk --java-options -Xmx8G BaseRecalibrator -I $i -R sars_cov_2.fasta --known-sites $root.filt.vcf.gz -O $root.table " >> $root.bam2br.sh;
 done
@@ -267,6 +271,7 @@ for i in `cat bams2.list`; do
 root=`basename $i .bam2`;
 echo '#!/usr/bin/env bash' > $root.bam2bqsr.sh;
 echo "#SBATCH -N 1" >> $root.bam2bqsr.sh;
+echo "#SBATCH -J bam2bqsr" >> $root.bam2bqsr.sh;
 echo "gatk --java-options -Xmx8G  ApplyBQSR -I $i -R sars_cov_2.fasta --bqsr-recal-file $root.table  -O $root.bqsr.bam " >> $root.bam2bqsr.sh;
 done
 

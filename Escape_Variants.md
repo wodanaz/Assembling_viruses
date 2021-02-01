@@ -52,13 +52,21 @@ root2=`basename $root _R1_001`;
 root3=`echo ${root} | cut -d'_' -f 1`;
 echo '#!/usr/bin/env bash' > $root.bwa.sh;
 echo "#SBATCH -N 1" >> $root.bwa.sh;
-#echo "#SBATCH --mem 6G" >> $root.bwa.sh;
+#echo "#SBATCH --mem 500" >> $root.bwa.sh;
 echo "bwa mem MT246667.fasta -R '@RG\tID:ID_${root3}\tPU:PU_${root3}\tSM:${root3}\tLB:${root}' $i > $root3.sam"  >> $root.bwa.sh;
 done
 
 
 
 for file in *bwa.sh ; do sbatch $file ; done
+
+
+
+#### Check mem allocation and MaxRSS ####
+
+sacct -j ID --format=JobID,JobName,ReqMem,MaxRSS,Elapsed  # RAM requested/used!!
+
+
 
 ```
 
@@ -73,6 +81,7 @@ for i in `cat sams.list`; do
 root=`basename $i .sam`;
 echo '#!/usr/bin/env bash' > $root.sam2bam.sh;
 echo "#SBATCH -N 1" >> $root.sam2bam.sh;
+echo "#SBATCH --mem 1000" >> $root.sam2bam.sh;
 echo "samtools view -Sb $i | samtools sort - > $root.bam" >> $root.sam2bam.sh;
 echo "samtools index  $root.bam" >> $root.sam2bam.sh;
 
@@ -135,6 +144,7 @@ for i in `cat dedup.list`; do
 root=`basename $i .dedup.bam`;
 echo '#!/usr/bin/env bash' > $root.bam2vcf.sh;
 echo "#SBATCH -N 1" >> $root.bam2vcf.sh;
+echo "#SBATCH --mem 10G" >> $root.bam2vcf.sh;
 echo "bcftools mpileup -Ou -f MT246667.fasta $i --annotate FORMAT/DPR > $root.bcf " >> $root.bam2vcf.sh;
 echo "bcftools call -vm --ploidy 1 $root.bcf > $root.raw.vcf " >> $root.bam2vcf.sh;
 done
@@ -155,6 +165,7 @@ for i in `cat vcfs.list`; do
 root=`basename $i .raw.vcf`;
 echo '#!/usr/bin/env bash' > $root.vcf2filt.sh;
 echo "#SBATCH -N 1" >> $root.vcf2filt.sh;
+echo "#SBATCH --mem 10" >> $root.vcf2filt.sh;
 echo "bcftools view -i '%QUAL>=20 && DP>5' -Oz $i > $root.filt.vcf.gz " >> $root.vcf2filt.sh;
 echo "bcftools index $root.filt.vcf.gz " >> $root.vcf2filt.sh;
 done
@@ -179,6 +190,7 @@ for i in `cat dedup.list`; do
 root=`basename $i .dedup.bam`;
 echo '#!/usr/bin/env bash' > $root.bam2bam2.sh;
 echo "#SBATCH -N 1" >> $root.bam2bam2.sh;
+echo "#SBATCH --mem 1000" >> $root.bam2bam2.sh;
 echo "java -Xmx7g -jar /nfs/software/helmod/apps/Core/picard-tools/2.4.1-gcb01/picard.jar AddOrReplaceReadGroups I=$i O=$root.bam2 RGSM=$root RGPU=unit1 RGLB=lib_${root} RGPL=ILLUMINA" >> $root.bam2bam2.sh;
 done 
 
@@ -207,6 +219,7 @@ for i in `cat bams2.list`; do
 root=`basename $i .bam2`;
 echo '#!/usr/bin/env bash' > $root.bam2br.sh;
 echo "#SBATCH -N 1" >> $root.bam2br.sh;
+echo "#SBATCH --mem 2000" >> $root.bam2br.sh;
 echo "tabix -p vcf $root.filt.vcf.gz -f" >> $root.bam2br.sh;
 echo "gatk --java-options -Xmx8G BaseRecalibrator -I $i -R MT246667.fasta --known-sites $root.filt.vcf.gz -O $root.table " >> $root.bam2br.sh;
 done
@@ -225,6 +238,7 @@ for i in `cat bams2.list`; do
 root=`basename $i .bam2`;
 echo '#!/usr/bin/env bash' > $root.bam2bqsr.sh;
 echo "#SBATCH -N 1" >> $root.bam2bqsr.sh;
+echo "#SBATCH --mem 2000" >> $root.bam2bqsr.sh;
 echo "gatk --java-options -Xmx8G  ApplyBQSR -I $i -R MT246667.fasta --bqsr-recal-file $root.table  -O $root.bqsr.bam " >> $root.bam2bqsr.sh;
 done
 
@@ -251,6 +265,7 @@ for i in `cat bqsrs.list`; do
 root=`basename $i .bqsr.bam`;
 echo '#!/usr/bin/env bash' > $root.bqsr2stat.sh;
 echo "#SBATCH -N 1" >> $root.bqsr2stat.sh;
+echo "#SBATCH --mem 1000" >> $root.bqsr2stat.sh;
 echo "java -Xmx7g -jar /nfs/software/helmod/apps/Core/picard-tools/2.4.1-gcb01/picard.jar CollectAlignmentSummaryMetrics R=MT246667.fasta I=$i O=$root.stat.txt" >> $root.bqsr2stat.sh;
 done 
 
@@ -269,6 +284,7 @@ for i in `cat bqsrs.list`; do
 root=`basename $i .bqsr.bam`;
 echo '#!/usr/bin/env bash' > $root.bqsr2depthbed.sh;
 echo "#SBATCH -N 1" >> $root.bqsr2depthbed.sh;
+echo "#SBATCH --mem 10" >> $root.bqsr2depthbed.sh;
 echo "samtools depth $i -a > $root.depth.bed  " >> $root.bqsr2depthbed.sh;
 done
 

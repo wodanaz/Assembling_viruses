@@ -265,7 +265,7 @@ for i in `cat bqsrs.list`; do
 root=`basename $i .bqsr.bam`;
 echo '#!/usr/bin/env bash' > $root.bqsr2stat.sh;
 echo "#SBATCH -N 1" >> $root.bqsr2stat.sh;
-echo "#SBATCH --mem 1000" >> $root.bqsr2stat.sh;
+echo "#SBATCH --mem 2000" >> $root.bqsr2stat.sh;
 echo "java -Xmx7g -jar /nfs/software/helmod/apps/Core/picard-tools/2.4.1-gcb01/picard.jar CollectAlignmentSummaryMetrics R=MT246667.fasta I=$i O=$root.stat.txt" >> $root.bqsr2stat.sh;
 done 
 
@@ -291,7 +291,7 @@ done
 for file in *bqsr2depthbed.sh ; do sbatch $file ; done
 ```
 
-Now, let's make a table:
+Now, let's make a table with coverage information:
 
 ```bash
 ls *depth.bed > depths.list

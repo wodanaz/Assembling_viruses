@@ -1,4 +1,4 @@
-# Examining escape mutations among viruses
+# Investigating escape mutations in SARS-CoV-2
 
 ### Genome Mapping Experiment 4 with BWA, trimmed TrimGalore and GATK
 

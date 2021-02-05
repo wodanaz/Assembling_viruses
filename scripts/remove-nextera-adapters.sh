@@ -10,8 +10,8 @@ set -e
 module load cutadapt/2.3-gcb01
 module load TrimGalore/0.6.5-fasrc01
 
-# Determine the file to process in reads.list based on SLURM_ARRAY_TASK_ID
-READFILE=$(awk NR==$SLURM_ARRAY_TASK_ID reads.list)
+# Determine the file to process in $FILENAMES_FILE on SLURM_ARRAY_TASK_ID
+READFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
 
 trim_galore --fastqc --nextera $READFILE
 

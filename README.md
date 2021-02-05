@@ -2,7 +2,7 @@
 
 ### Genome Mapping Experiment 4 with BWA, trimmed TrimGalore and GATK
 
-1. Index Genome Reference
+1. Index Genome Reference, this step can be run just one time in a specified directory. Then, the path to it can be added to the following steps.
 
 ```bash
 # Go to the Interactive Node:

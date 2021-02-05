@@ -37,7 +37,7 @@ echo ""
 echo "Step 4 - Create BAM from SAM and make an index"
 # create the list of sam files to process
 ls *.sam > sams.list
-./scripts/sbatch-array.sh scripts/create-bma-from-sam.sh sams.list
+./scripts/sbatch-array.sh scripts/create-bam-from-sam.sh sams.list
 echo "Step 4 - Done"
 echo ""
 

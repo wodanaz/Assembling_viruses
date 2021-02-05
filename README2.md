@@ -298,6 +298,7 @@ for i in `cat bqsrs.list`; do
 root=`basename $i .bqsr.bam`;
 echo '#!/usr/bin/env bash' > $root.bqsr2stat.sh;
 echo "#SBATCH -N 1" >> $root.bqsr2stat.sh;
+echo "#SBATCH -J bqsr2stat" >> $root.bqsr2stat.sh;
 echo "java -Xmx7g -jar /nfs/software/helmod/apps/Core/picard-tools/2.4.1-gcb01/picard.jar CollectAlignmentSummaryMetrics R=sars_cov_2.fasta I=$i O=$root.stat.txt" >> $root.bqsr2stat.sh;
 done 
 
@@ -316,6 +317,7 @@ for i in `cat bqsrs.list`; do
 root=`basename $i .bqsr.bam`;
 echo '#!/usr/bin/env bash' > $root.bqsr2depthbed.sh;
 echo "#SBATCH -N 1" >> $root.bqsr2depthbed.sh;
+echo "#SBATCH -J bqsr2depthbed" >> $root.bqsr2depthbed.sh;
 echo "samtools depth $i -a > $root.depth.bed  " >> $root.bqsr2depthbed.sh;
 done
 

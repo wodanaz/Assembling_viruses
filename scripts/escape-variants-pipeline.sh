@@ -34,6 +34,7 @@ echo "Pipeline - Starting"
 echo "Step 1 - Index Genome Reference"
 sbatch --wait scripts/index-reference-genome.sh
 echo "Step 1 - Done"
+echo ""
 
 
 echo "Step 2 - Remove Nextera Adapters"
@@ -41,6 +42,29 @@ echo "Step 2 - Remove Nextera Adapters"
 ls *.fastq.gz > reads.list
 run_sbatch_array_job scripts/remove-nextera-adapters.sh reads.list
 echo "Step 2 - Done"
+echo ""
+
+
+echo "Step 3 - Map using BWA with the cleaned libraries"
+# create the list of trimmed reads to process
+ls *_trimmed.fq.gz > reads2.list
+run_sbatch_array_job scripts/map-bwa-cleaned-libs.sh reads2.list
+echo "Step 3 - Done"
+echo ""
+
+
+echo "Step 4 - Create BAM from SAM and make an index"
+# create the list of sam files to process
+ls *.sam > sams.list
+run_sbatch_array_job scripts/create-bma-from-sam.sh sams.list
+echo "Step 4 - Done"
+echo ""
+
+
+echo "Step 5 - Create a dictionary file for using picard tools"
+sbatch --wait scripts/create-picard-dictionary.sh
+echo "Step 5 - Done"
+echo ""
 
 
 echo "Pipeline - Done"

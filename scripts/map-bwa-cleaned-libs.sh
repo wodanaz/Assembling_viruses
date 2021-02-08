@@ -1,8 +1,8 @@
 #!/bin/bash
 # Map using BWA with the cleaned libraries - Array Job
 #
-#SBATCH --job-name=ev-map-ary
-#SBATCH --output=logs/ev-map-%j-%a.out
+#SBATCH --job-name=ev-map-bwa-ary
+#SBATCH --output=logs/ev-map-bwa-%j-%a.out
 
 # stop if a command fails (non-zero exit status)
 set -e
@@ -17,4 +17,3 @@ root2=$(basename $root _R1_001)
 root3=$(echo ${root} | cut -d'_' -f 1)
 
 bwa mem MT246667.fasta -R "@RG\tID:ID_${root3}\tPU:PU_${root3}\tSM:${root3}\tLB:${root}" $READFILE > $root3.sam
-

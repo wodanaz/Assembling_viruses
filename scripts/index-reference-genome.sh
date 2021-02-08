@@ -10,4 +10,3 @@ set -e
 module load bwa/0.7.12-gcb01
 
 bwa index -a is MT246667.fasta
-

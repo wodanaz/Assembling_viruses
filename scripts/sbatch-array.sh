@@ -14,8 +14,8 @@ SCRIPTNAME=$1
 # export FILENAMES_FILE for use by array job scripts
 export FILENAMES_FILE=$2
 
-NUM_READ_FILES=$(cat ${FILENAMES_FILE} | wc -l)
-echo "Processing ${NUM_READ_FILES} files"
+NUM_FILES=$(cat ${FILENAMES_FILE} | wc -l)
+echo "Processing ${NUM_FILES} files from ${FILENAMES_FILE} using ${SCRIPTNAME}"
 # create an array job for each file but only allow MAX_ARRAY_JOBS processes at a time
-sbatch --wait --array=1-${NUM_READ_FILES}%${MAX_ARRAY_JOBS} $SCRIPTNAME
+sbatch --wait --array=1-${NUM_FILES}%${MAX_ARRAY_JOBS} $SCRIPTNAME
 

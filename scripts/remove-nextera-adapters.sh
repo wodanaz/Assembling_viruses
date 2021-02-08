@@ -14,4 +14,3 @@ module load TrimGalore/0.6.5-fasrc01
 READFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
 
 trim_galore --fastqc --nextera $READFILE
-

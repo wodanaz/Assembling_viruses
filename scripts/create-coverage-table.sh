@@ -2,7 +2,6 @@
 # make a table with coverage information
 #
 #SBATCH --job-name=ev-coverage-table
-#SBATCH --output=logs/ev-coverage-table-%j.out
 
 # stop if a command fails (non-zero exit status)
 set -e

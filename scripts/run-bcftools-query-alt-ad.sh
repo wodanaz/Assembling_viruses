@@ -2,7 +2,6 @@
 # bcftools query for "%POS %ALT" and "%POS [%AD]"
 #
 #SBATCH --job-name=ev-query-alt-ad
-#SBATCH --output=logs/ev-query-alt-ad-%j.out
 
 # stop if a command fails (non-zero exit status)
 set -e

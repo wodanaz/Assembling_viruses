@@ -2,7 +2,6 @@
 # BAM TO VCF USING BCFTOOLS TO CREATE A PRELIMINAR VCF FILE
 #
 #SBATCH --job-name=ev-gatk-bam-to-vcf
-#SBATCH --output=logs/ev-gbam-to-vcf-%j-%a.out
 #SBATCH --mem 10G
 
 # stop if a command fails (non-zero exit status)
@@ -16,5 +15,5 @@ BAMFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
 
 root=`basename $BAMFILE .dedup.bam`;
 
-bcftools mpileup -Ou -f sars_cov_2.fasta $BAMFILE --annotate FORMAT/DPR > $root.bcf
+bcftools mpileup -Ou -f $GENOME $BAMFILE --annotate FORMAT/DPR > $root.bcf
 bcftools call -vm --ploidy 1 $root.bcf > $root.raw.vcf

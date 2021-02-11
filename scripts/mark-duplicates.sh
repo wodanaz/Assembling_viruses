@@ -2,7 +2,6 @@
 # 'Deduplicate' or mark PCR duplicates
 #
 #SBATCH --job-name=ev-markdup
-#SBATCH --output=logs/ev-markdup-%j-%a.out
 #SBATCH --mem 10G
 
 # stop if a command fails (non-zero exit status)

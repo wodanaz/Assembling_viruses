@@ -1,8 +1,22 @@
 #!/usr/bin/env bash
 # Performs one time genome setup required by run-escape-variants.sh
 #
-# Expects a MT246667.fasta file to be present
 set -e
+
+while getopts "g:" OPTION; do
+    case $OPTION in
+    g)
+        export GENOME=$OPTARG
+        ;;
+    esac
+done
+
+if [ -z "$GENOME" ]
+then
+   echo "ERROR: You must specify a genome via the '-g <GENOME.fasta>' argument."
+   echo "Example: $0 -g MT246667.fasta"
+   exit 1
+fi
 
 # create logs directory if necessary
 mkdir -p logs

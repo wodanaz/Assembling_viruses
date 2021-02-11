@@ -2,11 +2,91 @@
 # Escape Variants
 #
 # Runs escape variants pipeline as an sbatch job
-# Processes all *.fastq.gz files in the current directory
-# Expects MT246667.fasta to be present
+# Processes *.fastq.gz files using the genome supplied.
+# The genome file must end with the .fasta extension and was previously indexed via ./setup-escape-variants.sh.
 
-GENOME_BASE_NAME=MT246667
-GENOME_INDEX_FILE="$GENOME_BASE_NAME.fasta.fai"
+ShowHelp()
+{
+   # Display Help
+   echo "Runs a Slurm pipeline determining escape variants in fastq.gz files."
+   echo
+   echo "usage: $0 -g genome -i inputdir [-o outdir] [-w workdir] [-l logdir] [-e email] [-s] [-d]"
+   echo "options:"
+   echo "-g genome    *.fasta genome to use - required"
+   echo "-i inputdir  directory containing *.fastq.gz files to process - required"
+   echo "-o outdir    directory to hold output files and logs - defaults to current directory"
+   echo "-w workdir   directory that will hold a tempdir and logs - defaults to current directory"
+   echo "-l logdir   directory that will hold sbatch logs - defaults to /logs within outdir"
+   echo "-e email     email address to notify on pipeline completion - defaults to empty(no email sent)"
+   echo "-s           runs surveillance mode - default is run experimental mode"
+   echo "-d           debug mode - skips deleting the tempdir"
+   echo ""
+   echo "NOTE: The input genome must first be indexed by running ./setup-variants-pipeline.sh."
+   echo "NOTE: The inputdir, outdir, logdir, and workdir must be directories shared across the slurm cluster."
+   echo ""
+}
+
+# create EVBASEDIR and EVSCRIPTS based on the location of this script
+export EVBASEDIR=$(readlink -e $(dirname $0))
+export EVSCRIPTS="$EVBASEDIR/scripts"
+
+# set default argument values
+export WORKDIR=$(pwd)
+export OUTDIR=$(pwd)
+export LOGDIR="$OUTDIR/logs"
+export LOGSUFFIX=$$
+export SURVEILLANCE_MODE=N
+export DELETE_EVTMPDIR=Y
+
+# parse arguments
+while getopts "g:i:o:w:e:sd" OPTION; do
+    case $OPTION in
+    g)
+        export GENOME=$(readlink -e $OPTARG)
+        ;;
+    i)
+        export INPUTDIR=$(readlink -e $OPTARG)
+        ;;
+    o)
+        export OUTDIR=$(readlink -f $OPTARG)
+        ;;
+    w)
+        export WORKDIR=$(readlink -f $OPTARG)
+        ;;
+    w)
+        export LOGDIR=$(readlink -f $OPTARG)
+        ;;
+    e)
+        export EMAIL=$OPTARG
+        ;;
+    s)
+        export SURVEILLANCE_MODE=Y
+        ;;
+    d)
+        export DELETE_EVTMPDIR=N
+        ;;
+    esac
+done
+
+# check required arguments
+if [ -z "$GENOME" ]
+then
+   echo "ERROR: Missing required '-g genome' argument."
+   echo ""
+   ShowHelp
+   exit 1
+fi
+if [ -z "INPUTDIR" ]
+then
+   echo "ERROR: Missing required '-i inputdir' argument."
+   echo ""
+   ShowHelp
+   exit 1
+fi
+
+# check that the genome has been indexed by ./setup-escape-variants.sh
+GENOME_INDEX_FILE="$GENOME.fai"
+GENOME_BASE_NAME=$(basename $GENOME .fasta)
 GENOME_DICTIONARY="$GENOME_BASE_NAME.dict"
 if [[ ! -f "$GENOME_INDEX_FILE" || ! -f "$GENOME_DICTIONARY" ]]
 then
@@ -16,9 +96,19 @@ then
     exit 1
 fi
 
-# create logs directory if necessary
-mkdir -p logs
+# create logs directory to hold slurm logs (this directory must exist before sbatch can run)
+mkdir -p $LOGDIR
+
+# send email if user specifies to
+SBATCH_FLAGS="$SBATCH_FLAGS --output=$LOGDIR/ev-pipeline-%j.out"
+if [ ! -z "$EMAIL" ]
+then
+   echo "Emailing $EMAIL on pipeline completion."
+   SBATCH_FLAGS="$SBATCH_FLAGS --mail-type=END --mail-user=$EMAIL"
+fi
 
 # run pipeline
-sbatch scripts/escape-variants-pipeline.sh
-
+JOBID=$(sbatch --parsable ${SBATCH_FLAGS} $EVSCRIPTS/escape-variants-pipeline.sh)
+echo "Submitted batch job $JOBID"
+echo "To monitor main log run:"
+echo "tail -f $LOGDIR/ev-pipeline-$JOBID.out"

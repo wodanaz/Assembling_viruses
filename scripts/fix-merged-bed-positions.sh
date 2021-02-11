@@ -4,7 +4,6 @@
 # Here, a general rule to change the positions affected
 #
 #SBATCH --job-name=ev-fixbed
-#SBATCH --output=logs/ev-fixbed-%j.out
 
 # stop if a command fails (non-zero exit status)
 set -e

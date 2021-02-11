@@ -2,7 +2,6 @@
 # Create BAM from SAM and make an index - Array Job
 #
 #SBATCH --job-name=ev-bam-from-sam-ary
-#SBATCH --output=logs/ev-bam-from-sam-%j-%a.out
 #SBATCH --mem 1000
 
 # stop if a command fails (non-zero exit status)

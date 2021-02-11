@@ -180,11 +180,15 @@ cp *gatk.tab $OUTDIR/.
 cp *gatk.filt.vcf.gz $OUTDIR/.
 cp table.sort.tab $OUTDIR/.
 
-echo "Deleting temporary $EVTMPDIR directory"
-# go into the parent directory
-cd ..
-# then we can delete the EVTMPDIR
-rm -rf $EVTMPDIR
+
+if [ "$DELETE_EVTMPDIR" == "Y" ]
+    then
+    echo "Deleting temporary $EVTMPDIR directory"
+    # go into the parent directory
+    cd ..
+    # then we can delete the EVTMPDIR
+    rm -rf $EVTMPDIR
+fi
 
 
 echo "Pipeline - Done"

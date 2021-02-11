@@ -10,7 +10,7 @@ ShowHelp()
    # Display Help
    echo "Runs a Slurm pipeline determining escape variants in fastq.gz files."
    echo
-   echo "usage: $0 -g genome -i inputdir [-o outdir] [-w workdir] [-l logdir] [-e email] [-s]"
+   echo "usage: $0 -g genome -i inputdir [-o outdir] [-w workdir] [-l logdir] [-e email] [-s] [-d]"
    echo "options:"
    echo "-g genome    *.fasta genome to use - required"
    echo "-i inputdir  directory containing *.fastq.gz files to process - required"
@@ -19,6 +19,7 @@ ShowHelp()
    echo "-l logdir   directory that will hold sbatch logs - defaults to /logs within outdir"
    echo "-e email     email address to notify on pipeline completion - defaults to empty(no email sent)"
    echo "-s           runs surveillance mode - default is run experimental mode"
+   echo "-d           debug mode - skips deleting the tempdir"
    echo ""
    echo "NOTE: The input genome must first be indexed by running ./setup-variants-pipeline.sh."
    echo "NOTE: The inputdir, outdir, logdir, and workdir must be directories shared across the slurm cluster."
@@ -35,9 +36,10 @@ export OUTDIR=$(pwd)
 export LOGDIR="$OUTDIR/logs"
 export LOGSUFFIX=$$
 export SURVEILLANCE_MODE=N
+export DELETE_EVTMPDIR=Y
 
 # parse arguments
-while getopts "g:i:o:w:e:s" OPTION; do
+while getopts "g:i:o:w:e:sd" OPTION; do
     case $OPTION in
     g)
         export GENOME=$(readlink -e $OPTARG)
@@ -59,6 +61,9 @@ while getopts "g:i:o:w:e:s" OPTION; do
         ;;
     s)
         export SURVEILLANCE_MODE=Y
+        ;;
+    d)
+        export DELETE_EVTMPDIR=N
         ;;
     esac
 done

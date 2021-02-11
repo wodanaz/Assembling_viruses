@@ -4,7 +4,6 @@
 # (such as read group, reported quality score, machine cycle, and nucleotide context).
 #
 #SBATCH --job-name=ev-baserecal
-#SBATCH --output=logs/ev-baserecal-%j-%a.out
 #SBATCH --mem 2000
 
 # stop if a command fails (non-zero exit status)
@@ -19,4 +18,4 @@ BAMFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
 root=`basename $BAMFILE .bam2`
 
 tabix -p vcf $root.filt.vcf.gz -f
-gatk --java-options -Xmx8G BaseRecalibrator -I $BAMFILE -R MT246667.fasta --known-sites $root.filt.vcf.gz -O $root.table
+gatk --java-options -Xmx8G BaseRecalibrator -I $BAMFILE -R $GENOME --known-sites $root.filt.vcf.gz -O $root.table

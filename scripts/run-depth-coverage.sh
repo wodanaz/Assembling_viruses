@@ -2,7 +2,6 @@
 # How much of the reference genome is covered by more than 1 read?
 #
 #SBATCH --job-name=ev-depth-cov
-#SBATCH --output=logs/ev-depth-cov-%j-%a.out
 #SBATCH --mem 10
 
 # stop if a command fails (non-zero exit status)

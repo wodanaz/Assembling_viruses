@@ -2,7 +2,6 @@
 # Remove Nextera Adapters - Array Job
 #
 #SBATCH --job-name=ev-rna-ary
-#SBATCH --output=logs/ev-rna-%j-%a.out
 
 # stop if a command fails (non-zero exit status)
 set -e

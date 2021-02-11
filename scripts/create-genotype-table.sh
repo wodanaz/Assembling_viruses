@@ -3,7 +3,6 @@
 # to work with than a VCF)
 #
 #SBATCH --job-name=ev-genotype-table
-#SBATCH --output=logs/ev-genotype-table-%j-%a.out
 
 # stop if a command fails (non-zero exit status)
 set -e

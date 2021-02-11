@@ -2,7 +2,6 @@
 # Collect statistics: Produces a summary of alignment metrics from a SAM or BAM file
 #
 #SBATCH --job-name=ev-collect-stats
-#SBATCH --output=logs/ev-collect-stats-%j-%a.out
 #SBATCH --mem 2000
 
 # stop if a command fails (non-zero exit status)
@@ -15,4 +14,4 @@ BAMFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
 
 root=`basename $BAMFILE .bqsr.bam`;
 
-java -Xmx7g -jar $PICARD_TOOLS_HOME/picard.jar CollectAlignmentSummaryMetrics R=MT246667.fasta I=$BAMFILE O=$root.stat.txt
+java -Xmx7g -jar $PICARD_TOOLS_HOME/picard.jar CollectAlignmentSummaryMetrics R=$GENOME I=$BAMFILE O=$root.stat.txt

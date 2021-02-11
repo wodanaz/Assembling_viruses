@@ -2,7 +2,6 @@
 # Add sme info for the read groups
 #
 #SBATCH --job-name=ev-update-rg
-#SBATCH --output=logs/ev-update-rg-%j-%a.out
 #SBATCH --mem 1000
 
 # stop if a command fails (non-zero exit status)

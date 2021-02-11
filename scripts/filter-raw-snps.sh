@@ -2,7 +2,6 @@
 # filter the raw SNPs using bcftools as a template of known variable sites
 #
 #SBATCH --job-name=ev-filter-snps
-#SBATCH --output=logs/ev-filter-snps-%j-%a.out
 #SBATCH --mem 10
 
 # stop if a command fails (non-zero exit status)

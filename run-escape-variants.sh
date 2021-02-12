@@ -39,7 +39,7 @@ export SURVEILLANCE_MODE=N
 export DELETE_EVTMPDIR=Y
 
 # parse arguments
-while getopts "g:i:o:w:e:sd" OPTION; do
+while getopts "g:i:o:w:l:e:sd" OPTION; do
     case $OPTION in
     g)
         export GENOME=$(readlink -e $OPTARG)
@@ -53,7 +53,7 @@ while getopts "g:i:o:w:e:sd" OPTION; do
     w)
         export WORKDIR=$(readlink -f $OPTARG)
         ;;
-    w)
+    l)
         export LOGDIR=$(readlink -f $OPTARG)
         ;;
     e)

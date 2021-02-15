@@ -11,14 +11,15 @@ ShowHelp()
    echo "-g genome        *.fasta genome to use - required"
    echo "-d datadir       directory used to hold input and output files - required"
    echo "-i inputproject  project name to download - required"
+   echo "-s               runs surveillance mode - default is run experimental mode"
    echo ""
    echo "NOTE: The input genome must first be indexed by running ./setup-variants-pipeline.sh."
    echo "NOTE: The genome and datadir must be shared across the slurm cluster."
    echo ""
 }
 
-
-while getopts "g:d:i:" OPTION; do
+REV_ARGS=""
+while getopts "g:d:i:s" OPTION; do
     case $OPTION in
     g)
         export GENOME=$(readlink -e $OPTARG)
@@ -28,6 +29,9 @@ while getopts "g:d:i:" OPTION; do
         ;;
     i)
         export DDS_INPUT_PROJECT=$OPTARG
+        ;;
+    s)
+        REV_ARGS="$REV_ARGS -s"
         ;;
     esac
 done
@@ -87,6 +91,7 @@ echo ""
 echo "Running escape variants pipeline - logs at $OUTPUT_RESULTS_DIR/logs"
 # run pipeline
 SBATCH_FLAGS="--wait" ./run-escape-variants.sh \
+  $REV_ARGS \
   -g $GENOME \
   -i $INPUT_PROJECT_DIR \
   -o $OUTPUT_RESULTS_DIR \

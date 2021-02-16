@@ -12,6 +12,5 @@ module load bedtools2/2.25.0-fasrc01
 BEDFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
 
 root=`basename $BEDFILE .depth.bed`
-GENOME_BASE_NAME=$(basename $GENOME .fasta)
-awk -v GENOME="$GENOME_BASE_NAME" '{ if ( $3 == 0 )  print GENOME "\t" $2 "\t" $2 }' ${BEDFILE} > $root.mask.bed
-bedtools merge -i $root.mask.bed | awk '{ print $1 "\t" $2 + 1   "\t" $3 - 1 }' > $root.merged.bed
+
+awk -v GENOME="$GENOME_BASE_NAME" '{ if ( $3 == 0 )  print GENOME "\t" $2 "\t" $2 + 1 }' ${BEDFILE} | bedtools merge |  awk '{ print $1 "\t" $2 "\t" $3 - 1  }' > $root.merged.bed

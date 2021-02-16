@@ -1,5 +1,5 @@
 #!/bin/bash
-# Make final consensus fasta sequence using the SNPs in the vcf file - consensus
+# Make final consensus fasta sequence using the SNPs in the vcf file and trims first and last 25 bp - consensus
 #
 #SBATCH --job-name=ev-bcftools-concensus
 
@@ -15,4 +15,4 @@ root=`basename $VCFFILE .gatk.filt.vcf`
 bcftools view -Oz $VCFFILE > $VCFFILE.gz
 bcftools index $VCFFILE.gz
 bcftools norm -f $GENOME $VCFFILE.gz -Ob -o $root.norm.bcf
-bcftools consensus -m $root.merged.bed -f $GENOME  -p ${root}_ -s ${root} -H A $VCFFILE.gz > $root.masked.fasta
+bcftools consensus -m $root.merged.bed -f $GENOME  -p ${root}_ -s ${root} -H A $VCFFILE.gz | seqtk trimfq -b 25 -e 25 > $root.masked.fasta

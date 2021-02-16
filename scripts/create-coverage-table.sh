@@ -7,7 +7,7 @@
 set -e
 
 module load bioawk
-GENOME_LENGTH=$((bioawk -c fastx '{ print length($seq)}' $GENOME))
+GENOME_LENGTH=$(bioawk -c fastx '{ print length($seq)}' $GENOME)
 
 
 for i in `cat depths.list`; do

@@ -135,16 +135,16 @@ echo "GATK Step 10a - Done"
 echo ""
 
 
-echo "GATK Step 10b - Fix merged bed positions"
-sbatch --wait "--output=${LOGDIR}/fix-merged-bed-positions-%j.out" $EVSCRIPTS/fix-merged-bed-positions.sh
-echo "GATK Step 10b - Done"
-echo ""
+#echo "GATK Step 10b - Fix merged bed positions"
+#sbatch --wait "--output=${LOGDIR}/fix-merged-bed-positions-%j.out" $EVSCRIPTS/fix-merged-bed-positions.sh
+#echo "GATK Step 10b - Done"
+#echo ""
 
 
-echo "GATK Step 10c - Run bcftools consensus"
+echo "GATK Step 10b - Run bcftools consensus"
 ls *gatk.filt.vcf > gfilts.list
 $EVSCRIPTS/sbatch-array.sh $EVSCRIPTS/run-bcftools-consensus.sh gfilts.list
-echo "GATK Step 10c - Done"
+echo "GATK Step 10b - Done"
 echo ""
 
 

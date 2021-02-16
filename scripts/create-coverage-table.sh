@@ -12,7 +12,7 @@ GENOME_LENGTH=$((bioawk -c fastx '{ print length($seq)}' $GENOME))
 
 for i in `cat depths.list`; do
     root=`basename $i .depth.bed`
-    percent=`awk -vlength=$GENOME_LENGTH '{ if ( $3 == 0 )  count++ } END { print 100 - ( count*100 / length  ) }' $i `
+    percent=`awk -v len=$GENOME_LENGTH '{ if ( $3 == 0 )  count++ } END { print 100 - ( count*100 / len  ) }' $i `
     echo $root $percent >> table.tab
 done
 

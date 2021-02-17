@@ -22,7 +22,7 @@ sort -k1,1 -V table.tab > table.sort.tab
 for i in `cat bams.list`; do
     root=`basename $i .bam`
     coverage=`samtools coverage $i -H`
-    echo $root $percent >> coverage.tab
+    echo $root $coverage >> coverage.tab
 done
 
 sort -k1,1 -V coverage.tab | sed 1i"sampleID\treference\tstartpos\tendpos\tnumreads\tcovbases\tcoverage\tmeandepth\tmeanbaseq\tmeanmapq" > coverage.sort.tab

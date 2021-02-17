@@ -175,10 +175,11 @@ fi
 echo "Copying output files to $OUTDIR"
 mkdir -p $OUTDIR
 # saving *masked.fasta, the *gatk.tab file, the *gatk.filt.vcf.gz, and table.sort.tab output files
-cp *masked.fasta $OUTDIR/.
 cp *gatk.tab $OUTDIR/.
 cp *gatk.filt.vcf.gz $OUTDIR/.
-cp table.sort.tab $OUTDIR/.
+cp coverage.gatk.tab $OUTDIR/.
+cp coverage.raw.tab $OUTDIR/.
+cp *cleaned.fasta $OUTDIR/.
 
 
 if [ "$DELETE_EVTMPDIR" == "Y" ]

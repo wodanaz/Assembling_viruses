@@ -18,6 +18,7 @@ done
 
 sort -k1,1 -V table.tab > table.sort.tab
 
+module load samtools
 
 for i in `cat bams.list`; do
     root=`basename $i .bam`

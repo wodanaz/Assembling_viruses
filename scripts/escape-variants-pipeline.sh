@@ -150,7 +150,7 @@ echo ""
 
 if [ "$SURVEILLANCE_MODE" == "Y" ]
 then
-    echo "Skipping GATK Step 11 since running in surveilance mode."
+    echo "Skipping GATK Step 11 since running in surveillance mode."
 else
     echo "GATK Step 11a - bcftools query for '%POS %ALT' and '%POS [%AD]'"
     ls *.gatk.filt.vcf > vcfs2.list
@@ -174,12 +174,20 @@ fi
 
 echo "Copying output files to $OUTDIR"
 mkdir -p $OUTDIR
-# saving *masked.fasta, the *gatk.tab file, the *gatk.filt.vcf.gz, and table.sort.tab output files
+# saving standard output files
 cp *gatk.tab $OUTDIR/.
 cp *gatk.filt.vcf.gz $OUTDIR/.
 cp coverage.gatk.tab $OUTDIR/.
 cp coverage.raw.tab $OUTDIR/.
 cp *cleaned.fasta $OUTDIR/.
+# when not in surveillance save GATK Step 11 files
+if [ "$SURVEILLANCE_MODE" != "Y" ]
+then
+   cp *.filt.tab $OUTDIR/.
+   cp *.depth.tab $OUTDIR/.
+   cp alldepths.final.tab $OUTDIR/.
+   cp allgenotypes.final.tab $OUTDIR/.
+fi
 
 
 if [ "$DELETE_EVTMPDIR" == "Y" ]

@@ -84,14 +84,13 @@ then
    exit 1
 fi
 
-# check that the genome has been indexed by ./setup-escape-variants.sh
-GENOME_INDEX_FILE="$GENOME.fai"
+# check that the genome dictionary has been created by ./setup-escape-variants.sh
 GENOME_BASE_NAME=$(basename $GENOME .fasta)
 GENOME_DICTIONARY="$GENOME_BASE_NAME.dict"
-if [[ ! -f "$GENOME_INDEX_FILE" || ! -f "$GENOME_DICTIONARY" ]]
+if [[ ! -f "$GENOME_DICTIONARY" ]]
 then
-    echo "ERROR: Genome index/dictionary not found."
-    echo "To fix run ./setup-escape-variants.sh"
+    echo "ERROR: Genome dictionary file $GENOME_DICTIONARY not found."
+    echo "To fix run ./setup-escape-variants.sh -g $GENOME"
     echo ""
     exit 1
 fi

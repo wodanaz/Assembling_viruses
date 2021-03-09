@@ -1,5 +1,6 @@
 #!/usr/bin/env perl
 #use Bio::Perl;
+use File::Basename;
 my %bigh;
 
 $usage="
@@ -21,7 +22,7 @@ if (!$ARGV[0]) { die $usage;}
 print "\t";
 foreach $argi (0..$#ARGV)
         {
-        print $ARGV[$argi], "\t";
+        print basename($ARGV[$argi]), "\t";
         open(TAB, $ARGV[$argi]);
         while(<TAB>)
                 {

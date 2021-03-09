@@ -11,14 +11,14 @@
 MAX_ARRAY_JOBS=4
 
 SCRIPTNAME=$1
-# export FILENAMES_FILE for use by array job scripts
-export FILENAMES_FILE=$2
+FILENAMES_FILE=$2
 
 # create a logfile based on the name script we are running
 SCRIPTBASE=$(basename ${SCRIPTNAME} .sh)
 SBATCH_OUTPUT_FLAG="--output=${LOGDIR}/${SCRIPTBASE}-%A_%a.out"
 
 NUM_FILES=$(cat ${FILENAMES_FILE} | wc -l)
-echo "Processing ${NUM_FILES} file(s) from ${FILENAMES_FILE} using ${SCRIPTBASE}.sh"
+echo "Processing ${NUM_FILES} file(s) using:"
+echo "    ${SCRIPTNAME} ${FILENAMES_FILE}"
 # create an array job for each file but only allow MAX_ARRAY_JOBS processes at a time
-sbatch --wait --array=1-${NUM_FILES}%${MAX_ARRAY_JOBS} $SBATCH_OUTPUT_FLAG $SCRIPTNAME
+sbatch --wait --array=1-${NUM_FILES}%${MAX_ARRAY_JOBS} $SBATCH_OUTPUT_FLAG $SCRIPTNAME $FILENAMES_FILE

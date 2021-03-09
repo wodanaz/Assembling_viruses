@@ -26,10 +26,6 @@ ShowHelp()
    echo ""
 }
 
-# create EVBASEDIR and EVSCRIPTS based on the location of this script
-export EVBASEDIR=$(readlink -e $(dirname $0))
-export EVSCRIPTS="$EVBASEDIR/scripts"
-
 # set default argument values
 export WORKDIR=$(pwd)
 export OUTDIR=$(pwd)
@@ -42,19 +38,19 @@ export DELETE_EVTMPDIR=Y
 while getopts "g:i:o:w:l:e:sd" OPTION; do
     case $OPTION in
     g)
-        export GENOME=$(readlink -e $OPTARG)
+        export GENOME=$OPTARG
         ;;
     i)
-        export INPUTDIR=$(readlink -e $OPTARG)
+        export INPUTDIR=$OPTARG
         ;;
     o)
-        export OUTDIR=$(readlink -f $OPTARG)
+        export OUTDIR=$OPTARG
         ;;
     w)
-        export WORKDIR=$(readlink -f $OPTARG)
+        export WORKDIR=$OPTARG
         ;;
     l)
-        export LOGDIR=$(readlink -f $OPTARG)
+        export LOGDIR=$OPTARG
         ;;
     e)
         export EMAIL=$OPTARG
@@ -107,7 +103,7 @@ then
 fi
 
 # run pipeline
-JOBID=$(sbatch --parsable ${SBATCH_FLAGS} $EVSCRIPTS/escape-variants-pipeline.sh)
+JOBID=$(sbatch --parsable ${SBATCH_FLAGS} scripts/escape-variants-pipeline.sh)
 echo "Submitted batch job $JOBID"
 echo "To monitor main log run:"
 echo "tail -f $LOGDIR/ev-pipeline-$JOBID.out"

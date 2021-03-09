@@ -4,146 +4,169 @@
 #
 #SBATCH --job-name=ev-pipeline
 
-# try to record the hash of the latest commit of this script
-GIT_COMMIT=$(git log --pretty="%H" -n 1 $EVBASEDIR)
-
 # stop if a command fails (non-zero exit status)
 set -e
 
 # show an error message when a step fails
 trap "echo 'ERROR: Script failed'" ERR
 
-echo "Pipeline - Starting - Version $GIT_COMMIT"
+# record the hash of the latest commit of this script
+export EV_GIT_COMMIT=$(git log --pretty="%H" -n 1)
+
+echo "Pipeline - Starting - Version $EV_GIT_COMMIT"
+echo ""
+
+echo "Current directory is $(pwd)"
+echo ""
 
 echo "Creating a temp directory"
 # create temp directory starting within the $WORKDIR
-export EVTMPDIR=$(mktemp -d --tmpdir=$WORKDIR)
-# change into the temp directory
-cd $EVTMPDIR
-echo "Running in temp directory $EVTMPDIR"
+export EVDIR=$(mktemp -d --tmpdir=$WORKDIR)
+echo "Running using directory $EVDIR"
+echo ""
+
+
+echo "Exported Environment Variables"
+echo "    export EVDIR=$EVDIR"
+echo "    export GENOME=$GENOME"
+echo "    export INPUTDIR=$INPUTDIR"
+echo ""
+
 
 echo "Step 1 - Remove Nextera Adapters"
 # create the list of input fastq.gz filenames to process
-ls ${INPUTDIR}/*.fastq.gz > reads.list
-$EVSCRIPTS/sbatch-array.sh $EVSCRIPTS/remove-nextera-adapters.sh reads.list
+ls ${INPUTDIR}/*.fastq.gz > $EVDIR/reads.list
+./scripts/sbatch-array.sh \
+    ./scripts/remove-nextera-adapters.sh $EVDIR/reads.list
 echo "Step 1 - Done"
 echo ""
 
 
 echo "Step 2 - Map using BWA with the cleaned libraries"
 # create the list of trimmed reads to process
-ls *_trimmed.fq.gz > reads2.list
-$EVSCRIPTS/sbatch-array.sh $EVSCRIPTS/map-bwa-cleaned-libs.sh reads2.list
+ls $EVDIR/*_trimmed.fq.gz > $EVDIR/reads2.list
+./scripts/sbatch-array.sh \
+    ./scripts/map-bwa-cleaned-libs.sh $EVDIR/reads2.list
 echo "Step 2 - Done"
 echo ""
 
 
 echo "Step 3 - Create BAM from SAM and make an index"
 # create the list of sam files to process
-ls *.sam > sams.list
-$EVSCRIPTS/sbatch-array.sh $EVSCRIPTS/create-bam-from-sam.sh sams.list
+ls $EVDIR/*.sam > $EVDIR/sams.list
+./scripts/sbatch-array.sh \
+    ./scripts/create-bam-from-sam.sh $EVDIR/sams.list
 echo "Step 3 - Done"
 echo ""
 
 
 echo "GATK Step 1 - 'Deduplicate' or mark PCR duplicates"
-ls *.bam > bams.list
-$EVSCRIPTS/sbatch-array.sh $EVSCRIPTS/mark-duplicates.sh bams.list
+ls $EVDIR/*.bam > $EVDIR/bams.list
+./scripts/sbatch-array.sh \
+    ./scripts/mark-duplicates.sh $EVDIR/bams.list
 echo "GATK Step 1 - Done"
 echo ""
 
 
 echo "GATK Step 2 - BAM TO VCF USING BCFTOOLS TO CREATE A PRELIMINAR VCF FILE"
-ls *dedup.bam > dedup.list
-$EVSCRIPTS/sbatch-array.sh $EVSCRIPTS/convert-bam-to-vcf.sh dedup.list
+ls $EVDIR/*dedup.bam > $EVDIR/dedup.list
+./scripts/sbatch-array.sh \
+    ./scripts/convert-bam-to-vcf.sh $EVDIR/dedup.list
 echo "GATK Step 2 - Done"
 echo ""
 
 
 echo "GATK Step 3a - In this step, we filter the raw SNPs using bcftools as a template of known variable sites"
-ls *raw.vcf > vcfs.list
-$EVSCRIPTS/sbatch-array.sh $EVSCRIPTS/filter-raw-snps.sh vcfs.list
+ls $EVDIR/*raw.vcf > $EVDIR/vcfs.list
+./scripts/sbatch-array.sh \
+    ./scripts/filter-raw-snps.sh $EVDIR/vcfs.list
 echo "GATK Step 3a - Done"
 echo ""
 
 
 echo "GATK Step 3b - Add sme info for the read groups"
-ls *dedup.bam > dedup.list
-$EVSCRIPTS/sbatch-array.sh $EVSCRIPTS/update-read-groups.sh  dedup.list
+ls $EVDIR/*dedup.bam > $EVDIR/dedup.list
+./scripts/sbatch-array.sh \
+    ./scripts/update-read-groups.sh $EVDIR/dedup.list
 echo "GATK Step 3b - Done"
 echo ""
 
 
 echo "GATK Step 4 - Base recalibration. First pass of the Base Quality Score Recalibration (BQSR)"
-ls *bam2 > bams2.list
-$EVSCRIPTS/sbatch-array.sh $EVSCRIPTS/run-base-recalibration.sh bams2.list
+ls $EVDIR/*bam2 > $EVDIR/bams2.list
+./scripts/sbatch-array.sh \
+    ./scripts/run-base-recalibration.sh $EVDIR/bams2.list
 echo "GATK Step 4 - Done"
 echo ""
 
 
 echo "GATK Step 5 - APPLY BQSR (Apply a linear base quality recalibration model trained with the BaseRecalibrator tool)"
-$EVSCRIPTS/sbatch-array.sh $EVSCRIPTS/apply-bqsr.sh bams2.list
+./scripts/sbatch-array.sh \
+    ./scripts/apply-bqsr.sh $EVDIR/bams2.list
 echo "GATK Step 5 - Done"
 echo ""
 
 
 echo "GATK Step 6a - Collect statistics: Produces a summary of alignment metrics from a SAM or BAM file"
-ls *bqsr.bam > bqsrs.list
-$EVSCRIPTS/sbatch-array.sh $EVSCRIPTS/collect-statistics.sh bqsrs.list
+ls $EVDIR/*bqsr.bam > $EVDIR/bqsrs.list
+./scripts/sbatch-array.sh \
+    ./scripts/collect-statistics.sh $EVDIR/bqsrs.list
 echo "GATK Step 6a - Done"
 echo ""
 
 
 echo "GATK Step 6b How much of the reference genome is covered by more than 1 read?"
-$EVSCRIPTS/sbatch-array.sh $EVSCRIPTS/run-depth-coverage.sh bqsrs.list
+./scripts/sbatch-array.sh \
+    ./scripts/run-depth-coverage.sh $EVDIR/bqsrs.list
 echo "GATK Step 6b - Done"
 echo ""
 
 
 echo "GATK Step 6c - make a table with coverage information"
-ls *depth.bed > depths.list
-sbatch --wait "--output=${LOGDIR}/create-coverage-table-%j.out" $EVSCRIPTS/create-coverage-table.sh depths.list
+echo "Running:"
+echo "    ./scripts/create-coverage-table.sh"
+sbatch --wait "--output=${LOGDIR}/create-coverage-table-%j.out" \
+    ./scripts/create-coverage-table.sh
 echo "GATK Step 6c - Done"
 echo ""
 
 
 echo "GATK Step 7 - HAPLOTYPE CALLER: Call germline SNPs and indels via local re-assembly of haplotypes"
-ls *bqsr.bam > bqsrs.list
-$EVSCRIPTS/sbatch-array.sh $EVSCRIPTS/run-haplotype-caller.sh bqsrs.list
+ls $EVDIR/*bqsr.bam > $EVDIR/bqsrs.list
+./scripts/sbatch-array.sh \
+    ./scripts/run-haplotype-caller.sh $EVDIR/bqsrs.list
 echo "GATK Step 7 - Done"
 echo ""
 
 
 echo "GATK Step 8 - FILTER VCFs (Filter variant calls based on INFO and/or FORMAT annotations)"
-ls *gatk.vcf > vcfs.list
-$EVSCRIPTS/sbatch-array.sh $EVSCRIPTS/filter-vcfs.sh vcfs.list
+ls $EVDIR/*gatk.vcf > $EVDIR/vcfs.list
+./scripts/sbatch-array.sh \
+    ./scripts/filter-vcfs.sh $EVDIR/vcfs.list
 echo "GATK Step 8 - Done"
 echo ""
 
 
 echo "GATK Step 9 - GENOTYPE TABLE (Extract specified fields for each variant in a VCF file to a tab-delimited table, which may be easier to work with than a VCF)"
-ls *filt.vcf > filts.list
-$EVSCRIPTS/sbatch-array.sh $EVSCRIPTS/create-genotype-table.sh filts.list
+ls $EVDIR/*filt.vcf > $EVDIR/filts.list
+./scripts/sbatch-array.sh \
+    ./scripts/create-genotype-table.sh $EVDIR/filts.list
 echo "GATK Step 9 - Done"
 echo ""
 
 
 echo "GATK Step 10a - Make final consensus fasta sequence using the SNPs in the vcf file"
-ls *depth.bed > depths.list
-$EVSCRIPTS/sbatch-array.sh $EVSCRIPTS/run-bedtools-merge.sh depths.list
+ls $EVDIR/*depth.bed > $EVDIR/depths.list
+./scripts/sbatch-array.sh \
+    ./scripts/run-bedtools-merge.sh $EVDIR/depths.list
 echo "GATK Step 10a - Done"
 echo ""
 
 
-#echo "GATK Step 10b - Fix merged bed positions"
-#sbatch --wait "--output=${LOGDIR}/fix-merged-bed-positions-%j.out" $EVSCRIPTS/fix-merged-bed-positions.sh
-#echo "GATK Step 10b - Done"
-#echo ""
-
-
 echo "GATK Step 10b - Run bcftools consensus"
-ls *gatk.filt.vcf > gfilts.list
-$EVSCRIPTS/sbatch-array.sh $EVSCRIPTS/run-bcftools-consensus.sh gfilts.list
+ls $EVDIR/*gatk.filt.vcf > $EVDIR/gfilts.list
+./scripts/sbatch-array.sh \
+    ./scripts/run-bcftools-consensus.sh $EVDIR/gfilts.list
 echo "GATK Step 10b - Done"
 echo ""
 
@@ -153,20 +176,29 @@ then
     echo "Skipping GATK Step 11 since running in surveillance mode."
 else
     echo "GATK Step 11a - bcftools query for '%POS %ALT' and '%POS [%AD]'"
-    ls *.gatk.filt.vcf > vcfs2.list
-    sbatch --wait "--output=${LOGDIR}/run-bcftools-query-alt-ad-%j.out" $EVSCRIPTS/run-bcftools-query-alt-ad.sh
+    ls $EVDIR/*.gatk.filt.vcf > $EVDIR/vcfs2.list
+    echo "Running:"
+    echo "    ./scripts/run-bcftools-query-alt-ad.sh"
+    sbatch --wait "--output=${LOGDIR}/run-bcftools-query-alt-ad-%j.out" \
+        ./scripts/run-bcftools-query-alt-ad.sh
     echo "GATK Step 11a - Done"
     echo ""
 
 
     echo "GATK Step 11b - Compile all tab tables for depth"
-    sbatch --wait "--output=${LOGDIR}/run-depth-compiler-%j.out" $EVSCRIPTS/run-depth-compiler.sh
+    echo "Running:"
+    echo "    ./scripts/run-depth-compiler.sh"
+    sbatch --wait "--output=${LOGDIR}/run-depth-compiler-%j.out" \
+        ./scripts/run-depth-compiler.sh
     echo "GATK Step 11b - Done"
     echo ""
 
 
     echo "GATK Step 11c - Compile all tab tables for genotype"
-    sbatch --wait "--output=${LOGDIR}/run-genotype-compiler-%j.out" $EVSCRIPTS/run-genotype-compiler.sh
+    echo "Running:"
+    echo "    ./scripts/run-genotype-compiler.sh"
+    sbatch --wait "--output=${LOGDIR}/run-genotype-compiler-%j.out" \
+        ./scripts/run-genotype-compiler.sh
     echo "GATK Step 11c - Done"
     echo ""
 fi
@@ -175,29 +207,29 @@ fi
 echo "Copying output files to $OUTDIR"
 mkdir -p $OUTDIR
 # saving standard output files
-cp *gatk.tab $OUTDIR/.
-cp *gatk.filt.vcf.gz $OUTDIR/.
-cp coverage.gatk.tab $OUTDIR/.
-cp coverage.raw.tab $OUTDIR/.
-cp *cleaned.fasta $OUTDIR/.
+cp $EVDIR/*gatk.tab $OUTDIR/.
+cp $EVDIR/*gatk.filt.vcf.gz $OUTDIR/.
+cp $EVDIR/coverage.gatk.tab $OUTDIR/.
+cp $EVDIR/coverage.raw.tab $OUTDIR/.
+cp $EVDIR/*cleaned.fasta $OUTDIR/.
 # when not in surveillance save GATK Step 11 files
 if [ "$SURVEILLANCE_MODE" != "Y" ]
 then
-   cp *.filt.tab $OUTDIR/.
-   cp *.depth.tab $OUTDIR/.
-   cp alldepths.final.tab $OUTDIR/.
-   cp allgenotypes.final.tab $OUTDIR/.
+   cp $EVDIR/*.filt.tab $OUTDIR/.
+   cp $EVDIR/*.depth.tab $OUTDIR/.
+   cp $EVDIR/alldepths.final.tab $OUTDIR/.
+   cp $EVDIR/allgenotypes.final.tab $OUTDIR/.
 fi
 
 
 if [ "$DELETE_EVTMPDIR" == "Y" ]
     then
-    echo "Deleting temporary $EVTMPDIR directory"
+    echo "Deleting temporary $EVDIR directory"
     # go into the parent directory
     cd ..
     # then we can delete the EVTMPDIR
-    rm -rf $EVTMPDIR
+    rm -rf $EVDIR
 fi
 
-
-echo "Pipeline - Done"
+echo ""
+echo "Pipeline - Done - Results in $OUTDIR"

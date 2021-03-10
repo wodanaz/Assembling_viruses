@@ -6,6 +6,7 @@ The escape variants Slurm pipeline is based on [Escape_Variants.md](https://gith
 - [bash](https://www.gnu.org/software/bash/)
 - A [Slurm cluster](https://slurm.schedmd.com/) with shared storage
 - [seqtk](https://github.com/lh3/seqtk) version 1.3-r116-dirty
+- [pangolin](https://github.com/cov-lineages/pangolin) version 2.3.2
 - Environment modules used in scripts/*.sh
   - GATK/4.1.3.0-gcb01
   - TrimGalore/0.6.5-fasrc01

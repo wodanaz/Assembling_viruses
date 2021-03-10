@@ -30,6 +30,7 @@ echo "Exported Environment Variables"
 echo "    export EVDIR=$EVDIR"
 echo "    export GENOME=$GENOME"
 echo "    export INPUTDIR=$INPUTDIR"
+echo "    export PROJECTNAME=$PROJECTNAME"
 echo ""
 
 
@@ -203,6 +204,14 @@ else
     echo ""
 fi
 
+echo "Pangolin Step 1"
+echo "Running:"
+echo "    ./scripts/run-pangolin.sh"
+sbatch --wait "--output=${LOGDIR}/run-pangolin-%j.out" \
+    ./scripts/run-pangolin.sh
+echo "Pangolin Step 1 - Done"
+echo ""
+
 
 echo "Copying output files to $OUTDIR"
 mkdir -p $OUTDIR
@@ -212,6 +221,22 @@ cp $EVDIR/*gatk.filt.vcf.gz $OUTDIR/.
 cp $EVDIR/coverage.gatk.tab $OUTDIR/.
 cp $EVDIR/coverage.raw.tab $OUTDIR/.
 cp $EVDIR/*cleaned.fasta $OUTDIR/.
+
+# save pangolin step output files if not empty
+if [ -s "$EVDIR/${PROJECTNAME}.csv" ]
+then
+   cp "$EVDIR/${PROJECTNAME}.csv" $OUTDIR/.
+else
+   echo "NOTE: The $EVDIR/${PROJECTNAME}.csv file was empty."
+fi
+
+if [ -s "$EVDIR/${PROJECTNAME}_lineages_of_concern.csv" ]
+then
+   cp "$EVDIR/${PROJECTNAME}_lineages_of_concern.csv" $OUTDIR/.
+else
+   echo "NOTE: The $EVDIR/${PROJECTNAME}_lineages_of_concern.csv file was empty."
+fi
+
 # when not in surveillance save GATK Step 11 files
 if [ "$SURVEILLANCE_MODE" != "Y" ]
 then

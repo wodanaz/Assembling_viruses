@@ -97,6 +97,7 @@ echo "Running escape variants pipeline - logs at $OUTPUT_RESULTS_DIR/logs"
 # run pipeline
 SBATCH_FLAGS="--wait" ./run-escape-variants.sh \
   $REV_ARGS \
+  -p $DDS_INPUT_PROJECT \
   -g $GENOME \
   -i $INPUT_PROJECT_DIR \
   -o $OUTPUT_RESULTS_DIR \

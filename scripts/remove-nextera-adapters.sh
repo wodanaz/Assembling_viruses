@@ -11,9 +11,6 @@
 # stop if a command fails (non-zero exit status)
 set -e
 
-module load cutadapt/2.3-gcb01
-module load TrimGalore/0.6.5-fasrc01
-
 # The first argument is a file containing filenames to process
 FILENAMES_FILE=$1
 # Determine the file to process in $FILENAMES_FILE on SLURM_ARRAY_TASK_ID

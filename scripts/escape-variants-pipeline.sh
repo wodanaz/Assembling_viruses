@@ -19,6 +19,20 @@ echo ""
 echo "Current directory is $(pwd)"
 echo ""
 
+echo "Activating 'escapevariants' conda environment"
+
+# set default value for ANACONDAMODULE to "Anaconda3/2019.10-gcb02"
+ANACONDAMODULE="${ANACONDAMODULE-Anaconda3/2019.10-gcb02}"
+
+# Load the Anaconda module if not empty
+if [ ! -z "$ANACONDAMODULE" ]
+then
+    module load $ANACONDAMODULE
+fi
+
+conda activate escapevariants
+echo ""
+
 echo "Creating a temp directory"
 # create temp directory starting within the $WORKDIR
 export EVDIR=$(mktemp -d --tmpdir=$WORKDIR)

@@ -11,8 +11,6 @@
 # stop if a command fails (non-zero exit status)
 set -e
 
-module load bedtools2/2.25.0-fasrc01
-
 # The first argument is a file containing filenames to process
 FILENAMES_FILE=$1
 # Determine the file to process in $FILENAMES_FILE based on SLURM_ARRAY_TASK_ID

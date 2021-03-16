@@ -7,8 +7,11 @@
 # The sbatch array job should read FILENAMES_FILE based on SLURM_ARRAY_TASK_ID to determine the filename to process.
 # eg. READFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
 
-# Controls how many jobs are run at the same time.
-MAX_ARRAY_JOBS=4
+# MAX_ARRAY_JOBS controls how many jobs are run at the same time.
+if [ -z "$MAX_ARRAY_JOBS" ]
+then
+  MAX_ARRAY_JOBS=4
+fi
 
 SCRIPTNAME=$1
 FILENAMES_FILE=$2

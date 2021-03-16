@@ -10,7 +10,7 @@ ShowHelp()
    # Display Help
    echo "Runs a Slurm pipeline determining escape variants in fastq.gz files."
    echo
-   echo "usage: $0 -g genome -i inputdir [-o outdir] [-w workdir] [-l logdir] [-e email] [-p project] [-s] [-d]"
+   echo "usage: $0 -g genome -i inputdir [-o outdir] [-w workdir] [-l logdir] [-e email] [-p project] [-j numjobs] [-s] [-d]"
    echo "options:"
    echo "-g genome    *.fasta genome to use - required"
    echo "-i inputdir  directory containing *.fastq.gz files to process - required"
@@ -19,6 +19,7 @@ ShowHelp()
    echo "-l logdir    directory that will hold sbatch logs - defaults to /logs within outdir"
    echo "-e email     email address to notify on pipeline completion - defaults to empty(no email sent)"
    echo "-p project   name of the project (output filenames) - defaults to sars-cov2"
+   echo "-j numjobs   number of array jobs to run in parallel - defaults to 4"
    echo "-s           runs surveillance mode - default is run experimental mode"
    echo "-d           debug mode - skips deleting the tempdir"
    echo ""
@@ -37,7 +38,7 @@ export DELETE_EVTMPDIR=Y
 export PROJECTNAME=sars-cov2
 
 # parse arguments
-while getopts "g:i:o:w:l:e:sdp:" OPTION; do
+while getopts "g:i:o:w:l:e:sdp:j:" OPTION; do
     case $OPTION in
     g)
         export GENOME=$OPTARG
@@ -59,6 +60,9 @@ while getopts "g:i:o:w:l:e:sdp:" OPTION; do
         ;;
     p)
         export PROJECTNAME=$OPTARG
+        ;;
+    j)
+        export MAX_ARRAY_JOBS=$OPTARG
         ;;
     s)
         export SURVEILLANCE_MODE=Y

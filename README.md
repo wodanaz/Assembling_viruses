@@ -4,26 +4,42 @@ The escape variants Slurm pipeline is based on [Escape_Variants.md](https://gith
 
 ## Requirements
 - [bash](https://www.gnu.org/software/bash/)
-- A [Slurm cluster](https://slurm.schedmd.com/) with shared storage
-- [seqtk](https://github.com/lh3/seqtk) version 1.3-r116-dirty
-- [pangolin](https://github.com/cov-lineages/pangolin) version 2.3.2
-- Environment modules used in scripts/*.sh
-  - GATK/4.1.3.0-gcb01
-  - TrimGalore/0.6.5-fasrc01
-  - bcftools/1.10.2-fasrc01
-  - bedtools2/2.25.0-fasrc01
-  - bwa/0.7.12-gcb01
-  - cutadapt/2.3-gcb01
-  - perl/5.10.1-fasrc04
-  - picard-tools/2.4.1-gcb01
-  - samtools/1.10-gcb01
-  - tabix/0.2.6-fasrc01
+- [Slurm cluster](https://slurm.schedmd.com/) with shared storage
+- [conda](https://conda.io/projects/conda/en/latest/index.html)  
 
+_By default __conda__ is provided via the [Anaconda3/2019.10-gcb02](https://github.com/Duke-GCB/helmod/blob/master/rpmbuild/SPECS/Anaconda3-2019.10-gcb02.spec) environment module. This module name can be overridden via the `ANACONDAMODULE` environment variable._
 
-NOTE: The spec files used on our cluster for modules are part of the [Duke-GCB/helmod](https://github.com/Duke-GCB/helmod) repo.
+### Conda Environment
+The pipeline requires a conda environment named `escapevariants` containing the following software:
+  - seqtk=1.3
+  - pangolin=2.3.2
+  - gatk4=4.1.3.0
+  - trim-galore=0.6.5
+  - bcftools=1.10.2
+  - bedtools=2.25.0
+  - bwa=0.7.12
+  - perl=5.32.0
+  - cutadapt=2.3
+  - picard=2.25.0
+  - samtools=1.10
+  - tabix=0.2.6
 
 ## Installation
-Clone this repository onto a shared location in your Slurm cluster.
+Clone this repository onto a shared location in your Slurm cluster. Then create the `escapevariants` conda environment.
+
+### HARDAC Installation Instructions
+On HARDAC the Anaconda3 module provides the conda command.
+From an interactive session you can use the Anaconda3 module to create the `escapevariants` conda environment by running:
+```
+module load Anaconda3/2019.10-gcb02
+conda env create -f environment.yml
+```
+
+### General Installation Instructions
+Using an Anaconda or Miniconda installallation create the `escapevariants` conda environment by running:
+```
+conda env create -f environment.yml
+```
 
 ## Setup
 Before the pipeline can be run the input genome FASTA file must be processed by [setup-escape-variants.sh](https://github.com/wodanaz/Assembling_viruses/blob/main/setup-escape-variants.sh).

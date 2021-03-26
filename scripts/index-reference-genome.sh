@@ -7,6 +7,4 @@
 # stop if a command fails (non-zero exit status)
 set -e
 
-module load bwa/0.7.12-gcb01
-
 bwa index -a is $GENOME

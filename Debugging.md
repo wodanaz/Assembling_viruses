@@ -10,6 +10,12 @@ For example:
 srun -p interactive --pty --mem 10G bash
 ```
 
+## Activate the Conda Environment
+```
+module load Anaconda3/2019.10-gcb02
+conda activate escapevariants
+```
+
 ## General Environment Variables
 The scripts require environment variables to be exported before running them.
 

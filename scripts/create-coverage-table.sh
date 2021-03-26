@@ -10,8 +10,6 @@
 set -e
 
 
-module load samtools
-
 for i in `cat $EVDIR/bams.list`; do
     root=`basename $i .bam`
     coverage=`samtools coverage $i -H`

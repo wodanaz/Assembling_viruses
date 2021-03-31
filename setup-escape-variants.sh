@@ -36,6 +36,8 @@ then
 fi
 
 conda activate escapevariants
+pangolin --update
+
 echo ""
 
 echo "Setup part 1 - Index Genome Reference"

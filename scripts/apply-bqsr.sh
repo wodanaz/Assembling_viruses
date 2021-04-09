@@ -2,7 +2,7 @@
 # APPLY BQSR (Apply a linear base quality recalibration model trained with the BaseRecalibrator tool)
 #
 #SBATCH --job-name=ev-apply-bqsr
-#SBATCH --mem 2000
+#SBATCH --mem 4000
 #
 # Required First Argument: file containing a list of *bam2 files to process
 # Required Environment Variables:

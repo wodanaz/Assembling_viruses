@@ -6,14 +6,15 @@ ShowHelp()
    # Display Help
    echo "Runs a Slurm pipeline determining escape variants in fastq.gz files, staging data from/to DDS."
    echo
-   echo "usage: $0 -g genome -d datadir -i inputproject [-w workdir] [-j numjobs] [-s]"
+   echo "usage: $0 -g genome -d datadir -i inputproject -m mode [-w workdir] [-j numjobs] [-D datetab]"
    echo "options:"
    echo "-g genome        *.fasta genome to use - required"
    echo "-d datadir       directory used to hold input and output files - required"
    echo "-i inputproject  project name to download - required"
+   echo "-m mode          run mode: 'h' (hospital surveillance) or 'c' (campus surveillance ) or 'e' (experimental) - required"
    echo "-w workdir       directory that will hold a tempdir - defaults to current directory"
    echo "-j numjobs       number of array jobs to run in parallel - defaults to 4"
-   echo "-s               runs surveillance mode - default is run experimental mode"
+   echo "-D datetab       date.tab file used to create supermetadata.tab - defaults to skipping the supermetadata step"
    echo ""
    echo "NOTE: The input genome must first be indexed by running ./setup-variants-pipeline.sh."
    echo "NOTE: The genome and datadir must be shared across the slurm cluster."
@@ -21,7 +22,7 @@ ShowHelp()
 }
 
 REV_ARGS=""
-while getopts "g:d:i:w:sj:" OPTION; do
+while getopts "g:d:i:m:w:j:D:" OPTION; do
     case $OPTION in
     g)
         export GENOME=$(readlink -e $OPTARG)
@@ -29,18 +30,21 @@ while getopts "g:d:i:w:sj:" OPTION; do
     d)
         export DATADIR=$(readlink -e $OPTARG)
         ;;
+    m)
+        REV_ARGS="$REV_ARGS -m $OPTARG "
+        ;;
     i)
         export DDS_INPUT_PROJECT=$OPTARG
         ;;
     j)
         REV_ARGS="$REV_ARGS -j $OPTARG "
         ;;
-    s)
-        REV_ARGS="$REV_ARGS -s "
-        ;;
     w)
         WORKDIR=$(readlink -e $OPTARG)
         REV_ARGS="$REV_ARGS -w $WORKDIR "
+        ;;
+    D)
+        REV_ARGS="$REV_ARGS -D $OPTARG "
         ;;
     esac
 done

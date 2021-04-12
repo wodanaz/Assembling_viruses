@@ -2,7 +2,7 @@
 # Add sme info for the read groups
 #
 #SBATCH --job-name=ev-update-rg
-#SBATCH --mem 1000
+#SBATCH --mem 4000
 #
 # Required First Argument: file containing a list of *dedup.bam files to process
 # Required Environment Variables:

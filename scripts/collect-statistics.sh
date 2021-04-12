@@ -2,7 +2,7 @@
 # Collect statistics: Produces a summary of alignment metrics from a SAM or BAM file
 #
 #SBATCH --job-name=ev-collect-stats
-#SBATCH --mem 2000
+#SBATCH --mem 4000
 #
 # Required First Argument: file containing a list of *bqsr.bam files to process
 # Required Environment Variables:

@@ -42,9 +42,11 @@ echo ""
 
 echo "Exported Environment Variables"
 echo "    export EVDIR=$EVDIR"
+echo "    export EVMODE=$EVMODE"
 echo "    export GENOME=$GENOME"
 echo "    export INPUTDIR=$INPUTDIR"
 echo "    export PROJECTNAME=$PROJECTNAME"
+echo "    export DATETAB=$DATETAB"
 echo ""
 
 
@@ -186,37 +188,28 @@ echo "GATK Step 10b - Done"
 echo ""
 
 
-if [ "$SURVEILLANCE_MODE" == "Y" ]
+if [ "$EVMODE" == "e" ]
 then
     echo "Skipping GATK Step 11 since running in surveillance mode."
 else
-    echo "GATK Step 11a - bcftools query for '%POS %ALT' and '%POS [%AD]'"
-    ls $EVDIR/*.gatk.filt.vcf > $EVDIR/vcfs2.list
-    echo "Running:"
-    echo "    ./scripts/run-bcftools-query-alt-ad.sh"
-    sbatch --wait "--output=${LOGDIR}/run-bcftools-query-alt-ad-%j.out" \
-        ./scripts/run-bcftools-query-alt-ad.sh
+    echo "GATK Step 11a - intersect vcf files with spike.bed"
+    ls $EVDIR/*gatk.filt.vcf > $EVDIR/filt-vcfs.list
+    ./scripts/sbatch-array.sh \
+        ./scripts/intersect-spike.sh $EVDIR/filt-vcfs.list
     echo "GATK Step 11a - Done"
-    echo ""
 
-
-    echo "GATK Step 11b - Compile all tab tables for depth"
-    echo "Running:"
-    echo "    ./scripts/run-depth-compiler.sh"
-    sbatch --wait "--output=${LOGDIR}/run-depth-compiler-%j.out" \
-        ./scripts/run-depth-compiler.sh
+    echo "GATK Step 11b - run genotype compiler on spike filtered data"
+    sbatch --wait "--output=${LOGDIR}/run-spike-genotype-compiler-%j.out" \
+        ./scripts/run-spike-genotype-compiler.sh
     echo "GATK Step 11b - Done"
-    echo ""
 
-
-    echo "GATK Step 11c - Compile all tab tables for genotype"
-    echo "Running:"
-    echo "    ./scripts/run-genotype-compiler.sh"
-    sbatch --wait "--output=${LOGDIR}/run-genotype-compiler-%j.out" \
-        ./scripts/run-genotype-compiler.sh
+    echo "GATK Step 11c - run depth compiler on spike filtered data"
+    sbatch --wait "--output=${LOGDIR}/run-spike-depth-compiler-%j.out" \
+        ./scripts/run-spike-depth-compiler.sh
     echo "GATK Step 11c - Done"
     echo ""
 fi
+
 
 echo "Pangolin Step 1"
 echo "Running:"
@@ -225,6 +218,47 @@ sbatch --wait "--output=${LOGDIR}/run-pangolin-%j.out" \
     ./scripts/run-pangolin.sh
 echo "Pangolin Step 1 - Done"
 echo ""
+
+
+# determine if we should run the supermetadata step
+SUPERMETADATA="N"
+if [ -n "$DATETAB" ]
+then
+    REQUIREDFILE=""
+    if [ "$EVMODE" == "c" ]
+    then
+        REQUIREDFILE=$EVDIR/$PROJECTNAME.csv
+    fi
+    if [ "$EVMODE" == "h" ]
+    then
+        REQUIREDFILE=$EVDIR/${PROJECTNAME}_lineages_of_concern.csv
+    fi
+    if [ -s "$REQUIREDFILE" ]
+    then
+        SUPERMETADATA="Y"
+    else
+        echo "Skipping mode $EVMODE supermetadata step because of empty $REQUIREDFILE"
+    fi
+fi
+
+if [ "$SUPERMETADATA" == "Y" ]
+then
+    echo "Supermetadata Step 1 - using $DATETAB with mode $EVMODE"
+    echo "Running:"
+    echo "    ./scripts/supermetadata-modify-titles.sh"
+    sbatch --wait "--output=${LOGDIR}/supermetadata-modify-titles-%j.out" \
+        ./scripts/supermetadata-modify-titles.sh
+    echo "Supermetadata Step 1 - DONE"
+    echo ""
+
+    echo "Supermetadata Step 2 - create spreadsheet"
+    sbatch --wait "--output=${LOGDIR}/create-spreadsheet-%j.out" \
+        ./scripts/create-spreadsheet.py
+    echo "Supermetadata Step 2 - Done"
+    echo ""
+else
+    echo "Skipping Supermetadata Step - DATETAB=$DATETAB EVMODE=$EVMODE"
+fi
 
 
 echo "Copying output files to $OUTDIR"
@@ -252,14 +286,20 @@ else
 fi
 
 # when not in surveillance save GATK Step 11 files
-if [ "$SURVEILLANCE_MODE" != "Y" ]
+if [ "$EVMODE" != "e" ]
 then
-   cp $EVDIR/*.filt.tab $OUTDIR/.
+   cp $EVDIR/*.spike.tab $OUTDIR/.
+   cp $EVDIR/spike_genotypes.final.tab $OUTDIR/.
    cp $EVDIR/*.depth.tab $OUTDIR/.
-   cp $EVDIR/alldepths.final.tab $OUTDIR/.
-   cp $EVDIR/allgenotypes.final.tab $OUTDIR/.
+   cp $EVDIR/spike_depths.final.tab $OUTDIR/.
 fi
 
+if [ "$SUPERMETADATA" == "Y" ]
+then
+  cp $EVDIR/supermetadata.tab $OUTDIR/.
+  cp $EVDIR/${PROJECTNAME}.fasta $OUTDIR/.
+  cp $EVDIR/results.xlsx $OUTDIR/.
+fi
 
 if [ "$DELETE_EVTMPDIR" == "Y" ]
     then

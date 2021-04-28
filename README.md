@@ -25,7 +25,15 @@ The pipeline requires a conda environment named `escapevariants` containing the 
   - tabix=0.2.6
 
 ## Installation
-Clone this repository onto a shared location in your Slurm cluster. Then create the `escapevariants` conda environment.
+Clone this repository onto a shared location in your Slurm cluster. 
+Create the config.sh file containing global configuration settings such as the slurm account.
+Then create the `escapevariants` conda environment.
+
+### Create config.sh
+The config.sh file can be created by copying the example file in place.
+```
+cp example-config.sh config.sh
+```
 
 ### HARDAC Installation Instructions
 On HARDAC the Anaconda3 module provides the conda command.

@@ -18,4 +18,4 @@ BEDFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
 
 root=`basename $BEDFILE .depth.bed`
 
-awk '{ if ( $3 == 0 )  print $1 "\t" $2 "\t" $2 + 1 }' ${BEDFILE} | bedtools merge |  awk '{ print $1 "\t" $2 "\t" $3 - 1  }' > $EVDIR/$root.merged.bed
+awk '{ if ( $3 < 5 )  print $1 "\t" $2 "\t" $2 + 1 }' ${BEDFILE} | bedtools merge |  awk '{ print $1 "\t" $2 "\t" $3 - 1  }' > $EVDIR/$root.merged.bed

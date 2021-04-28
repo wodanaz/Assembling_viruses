@@ -18,4 +18,4 @@ FILENAMES_FILE=$1
 BAMFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
 
 root=`basename $BAMFILE .bam2`
-gatk --java-options "-Djava.io.tmpdir=/data/covid19lab/tmp" ApplyBQSR -I $BAMFILE -R $GENOME --bqsr-recal-file $EVDIR/$root.table  -O $EVDIR/$root.bqsr.bam
+gatk --java-options "-Djava.io.tmpdir=$EVDIR" ApplyBQSR -I $BAMFILE -R $GENOME --bqsr-recal-file $EVDIR/$root.table  -O $EVDIR/$root.bqsr.bam

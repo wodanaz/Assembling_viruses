@@ -19,4 +19,4 @@ BAMFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
 
 root=`basename $BAMFILE .bam`
 
-picard -Xmx14g -Djava.io.tmpdir=/data/covid19lab/tmp MarkDuplicates I=$BAMFILE O=$EVDIR/$root.dedup.bam M=$EVDIR/$root.metric.txt
+picard -Xmx14g -Djava.io.tmpdir=$EVDIR MarkDuplicates I=$BAMFILE O=$EVDIR/$root.dedup.bam M=$EVDIR/$root.metric.txt

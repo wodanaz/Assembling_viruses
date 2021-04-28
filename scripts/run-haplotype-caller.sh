@@ -18,4 +18,4 @@ FILENAMES_FILE=$1
 BAMFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
 
 root=`basename $BAMFILE .bqsr.bam`
-gatk --java-options "-Djava.io.tmpdir=/data/covid19lab/tmp" HaplotypeCaller -I $BAMFILE -R $GENOME -ploidy 1 -O $EVDIR/$root.gatk.vcf
+gatk --java-options "-Djava.io.tmpdir=$EVDIR" HaplotypeCaller -I $BAMFILE -R $GENOME -ploidy 1 -O $EVDIR/$root.gatk.vcf

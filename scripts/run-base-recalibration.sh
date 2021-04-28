@@ -22,4 +22,4 @@ BAMFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
 root=`basename $BAMFILE .bam2`
 
 tabix -p vcf $EVDIR/$root.filt.vcf.gz -f
-gatk --java-options "-Djava.io.tmpdir=/data/covid19lab/tmp" BaseRecalibrator -I $BAMFILE -R $GENOME --known-sites $EVDIR/$root.filt.vcf.gz -O $EVDIR/$root.table
+gatk --java-options "-Djava.io.tmpdir=$EVDIR" BaseRecalibrator -I $BAMFILE -R $GENOME --known-sites $EVDIR/$root.filt.vcf.gz -O $EVDIR/$root.table

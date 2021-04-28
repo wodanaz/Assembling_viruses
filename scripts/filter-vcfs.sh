@@ -17,7 +17,7 @@ FILENAMES_FILE=$1
 VCFFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
 
 root=`basename $VCFFILE .gatk.vcf`
-gatk --java-options "-Djava.io.tmpdir=/data/covid19lab/tmp" VariantFiltration -R $GENOME -V $VCFFILE -O $EVDIR/$root.gatk.filt.vcf \
+gatk --java-options "-Djava.io.tmpdir=$EVDIR" VariantFiltration -R $GENOME -V $VCFFILE -O $EVDIR/$root.gatk.filt.vcf \
    --filter-expression 'QD < 10.0' \
    --filter-name QD2 \
    --filter-expression 'FS > 60.0'  \

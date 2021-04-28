@@ -126,8 +126,6 @@ else
    echo ""
    exit 1
 fi
-env
-exit
 
 # create logs directory to hold slurm logs (this directory must exist before sbatch can run)
 mkdir -p $LOGDIR

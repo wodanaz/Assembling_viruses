@@ -2,7 +2,7 @@
 # 'Deduplicate' or mark PCR duplicates
 #
 #SBATCH --job-name=ev-markdup
-#SBATCH --mem 10G
+#SBATCH --mem 15G
 #
 # Required First Argument: file containing a list of *.bam files to process
 # Required Environment Variables:
@@ -19,4 +19,4 @@ BAMFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
 
 root=`basename $BAMFILE .bam`
 
-picard -Xmx7g MarkDuplicates I=$BAMFILE O=$EVDIR/$root.dedup.bam M=$EVDIR/$root.metric.txt
+picard -Xmx14g -Djava.io.tmpdir=/data/covid19lab/tmp MarkDuplicates I=$BAMFILE O=$EVDIR/$root.dedup.bam M=$EVDIR/$root.metric.txt

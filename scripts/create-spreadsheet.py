@@ -15,7 +15,7 @@ output_path = evdir + "results.xlsx"
 
 # read supermetadata using Sample as an index column
 supermetadata = pd.read_csv(supermetadata_path, sep="$", index_col=0,
-                            names=["Sample", "Coverage", "Date", "Lineage"])
+                            names=["Sample", "Lineage", "Coverage", "Date""])
 
 # read supermetadata using Sample as an index column
 spike_genotypes = pd.read_csv(spike_genotypes_path, sep="\t", index_col=0)

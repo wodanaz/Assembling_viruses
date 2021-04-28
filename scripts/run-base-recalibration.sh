@@ -4,7 +4,7 @@
 # (such as read group, reported quality score, machine cycle, and nucleotide context).
 #
 #SBATCH --job-name=ev-baserecal
-#SBATCH --mem 2000
+#SBATCH --mem 16G
 #
 # Required First Argument: file containing a list of *bam2 files to process
 # Required Environment Variables:
@@ -22,4 +22,4 @@ BAMFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
 root=`basename $BAMFILE .bam2`
 
 tabix -p vcf $EVDIR/$root.filt.vcf.gz -f
-gatk --java-options -Xmx8G BaseRecalibrator -I $BAMFILE -R $GENOME --known-sites $EVDIR/$root.filt.vcf.gz -O $EVDIR/$root.table
+gatk --java-options "-Djava.io.tmpdir=/data/covid19lab/tmp" BaseRecalibrator -I $BAMFILE -R $GENOME --known-sites $EVDIR/$root.filt.vcf.gz -O $EVDIR/$root.table

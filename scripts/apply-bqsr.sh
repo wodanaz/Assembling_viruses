@@ -2,7 +2,7 @@
 # APPLY BQSR (Apply a linear base quality recalibration model trained with the BaseRecalibrator tool)
 #
 #SBATCH --job-name=ev-apply-bqsr
-#SBATCH --mem 4000
+#SBATCH --mem 10G
 #
 # Required First Argument: file containing a list of *bam2 files to process
 # Required Environment Variables:
@@ -18,4 +18,4 @@ FILENAMES_FILE=$1
 BAMFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
 
 root=`basename $BAMFILE .bam2`
-gatk --java-options -Xmx8G  ApplyBQSR -I $BAMFILE -R $GENOME --bqsr-recal-file $EVDIR/$root.table  -O $EVDIR/$root.bqsr.bam
+gatk --java-options "-Djava.io.tmpdir=/data/covid19lab/tmp" ApplyBQSR -I $BAMFILE -R $GENOME --bqsr-recal-file $EVDIR/$root.table  -O $EVDIR/$root.bqsr.bam

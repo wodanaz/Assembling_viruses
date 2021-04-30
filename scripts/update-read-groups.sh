@@ -19,4 +19,4 @@ BAMFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
 
 root=`basename $BAMFILE .dedup.bam`;
 
-picard -Xmx7g AddOrReplaceReadGroups -Djava.io.tmpdir=/data/covid19lab/tmp I=$BAMFILE O=$EVDIR/$root.bam2 RGSM=$root RGPU=unit1 RGLB=lib_${root} RGPL=ILLUMINA
+picard -Xmx7g AddOrReplaceReadGroups -Djava.io.tmpdir=$EVDIR I=$BAMFILE O=$EVDIR/$root.bam2 RGSM=$root RGPU=unit1 RGLB=lib_${root} RGPL=ILLUMINA

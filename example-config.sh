@@ -1,0 +1,1 @@
+export SBATCH_ACCOUNT=covid19lab

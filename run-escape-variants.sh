@@ -114,6 +114,19 @@ then
     exit 1
 fi
 
+
+# check that the config.sh has been setup
+if [ -f config.sh ]
+then
+   source config.sh
+else
+   echo "ERROR: Missing config.sh config file."
+   echo "To fix run:"
+   echo "  cp example-config.sh config.sh"
+   echo ""
+   exit 1
+fi
+
 # create logs directory to hold slurm logs (this directory must exist before sbatch can run)
 mkdir -p $LOGDIR
 

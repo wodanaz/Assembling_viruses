@@ -19,4 +19,4 @@ BAMFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
 
 root=`basename $BAMFILE .bqsr.bam`;
 
-picard -Xmx7g -Djava.io.tmpdir=/data/covid19lab/tmp CollectAlignmentSummaryMetrics R=$GENOME I=$BAMFILE O=$EVDIR/$root.stat.txt
+picard -Xmx7g -Djava.io.tmpdir=$EVDIR CollectAlignmentSummaryMetrics R=$GENOME I=$BAMFILE O=$EVDIR/$root.stat.txt

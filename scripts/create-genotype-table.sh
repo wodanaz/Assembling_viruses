@@ -18,4 +18,4 @@ FILENAMES_FILE=$1
 VCFFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
 
 root=`basename $VCFFILE .filt.vcf`
-gatk --java-options "-Djava.io.tmpdir=/data/covid19lab/tmp" VariantsToTable -V $VCFFILE -F POS -F TYPE -F REF -F ALT -GF AD -O $EVDIR/$root.tab
+gatk --java-options "-Djava.io.tmpdir=$EVDIR" VariantsToTable -V $VCFFILE -F POS -F TYPE -F REF -F ALT -GF AD -O $EVDIR/$root.tab

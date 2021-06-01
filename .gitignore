@@ -1,2 +1,5 @@
 /logs
 config.sh
+resources/**
+!NC_045512.fasta
+.snakemake

@@ -1,0 +1,28 @@
+# The first rule in the Snakefile defines the default rule
+# For now we define all the output files based on resources/NC_045512.fasta
+rule all:
+    input:
+        multiext("resources/NC_045512.fasta", ".amb", ".ann", ".bwt", ".pac", ".sa"), # bwa index files
+        "resources/NC_045512.fasta.fai", # samtools index file
+        "resources/NC_045512.dict", # picard dictionary file
+
+rule bwa_index_genome:
+    input: "{genome}"
+    output: multiext("{genome}", ".amb", ".ann", ".bwt", ".pac", ".sa")
+    conda: "envs/bwa_index_genome.yaml"
+    log: "logs/bwa_index_genome_{genome}.log"
+    shell: "bwa index -a is {input} &>{log}"
+
+rule samtools_index_genome:
+    input: "{genome}"
+    output: "{genome}.fai"
+    conda: "envs/bwa_index_genome.yaml"
+    log: "logs/samtools_index_genome_{genome}.log"
+    shell: "samtools faidx {input} &>{log}"
+
+rule create_picard_dictionary:
+    input: "{genomename}.fasta"
+    output: "{genomename}.dict"
+    conda: "envs/create_picard_dictionary.yaml"
+    log: "logs/create_picard_dictionary_{genomename}.log"
+    shell: "picard CreateSequenceDictionary R={input} O={output} &>{log}"

@@ -1,0 +1,6 @@
+{
+    "SBATCH_DEFAULTS": "account=covid19lab",
+    "CLUSTER_NAME": "",
+    "CLUSTER_CONFIG": "",
+    "ADVANCED_ARGUMENT_CONVERSION": "no"
+}

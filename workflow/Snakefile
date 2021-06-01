@@ -16,7 +16,7 @@ rule bwa_index_genome:
 rule samtools_index_genome:
     input: "{genome}"
     output: "{genome}.fai"
-    conda: "envs/bwa_index_genome.yaml"
+    conda: "envs/samtools_index_genome.yaml"
     log: "logs/samtools_index_genome_{genome}.log"
     shell: "samtools faidx {input} &>{log}"
 

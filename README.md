@@ -12,7 +12,7 @@ _By default __conda__ is provided via the [Anaconda3/2019.10-gcb02](https://gith
 ### Conda Environment
 The pipeline requires a conda environment named `escapevariants` containing the following software:
   - seqtk=1.3
-  - pangolin=2.3.2
+  - pangolin=3.0.3
   - gatk4=4.1.3.0
   - trim-galore=0.6.5
   - bcftools=1.10.2

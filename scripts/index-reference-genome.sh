@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Index Genome Reference
-# Expects GENOME environment variable to contain a path to the genome to index.
-#
-#SBATCH --job-name=ev-igv
+# Required positional argument: genome file to index
 
 # stop if a command fails (non-zero exit status)
 set -e
 
+GENOME=$1
+
 bwa index -a is $GENOME
+samtools faidx $GENOME

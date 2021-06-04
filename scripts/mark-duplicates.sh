@@ -1,22 +1,13 @@
 #!/bin/bash
 # 'Deduplicate' or mark PCR duplicates
-#
-#SBATCH --job-name=ev-markdup
-#SBATCH --mem 15G
-#
-# Required First Argument: file containing a list of *.bam files to process
-# Required Environment Variables:
-#  EVDIR - working directory
-#  SLURM_ARRAY_TASK_ID - number specifying which file in $1 (FILENAMES_FILE) to process
+# Required positional arguments:
+# - file in bam to process
 
 # stop if a command fails (non-zero exit status)
 set -e
 
-# The first argument is a file containing filenames to process
-FILENAMES_FILE=$1
-# Determine the file to process in $FILENAMES_FILE based on SLURM_ARRAY_TASK_ID
-BAMFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
+BAMFILE=$1
 
 root=`basename $BAMFILE .bam`
 
-picard -Xmx14g -Djava.io.tmpdir=$EVDIR MarkDuplicates I=$BAMFILE O=$EVDIR/$root.dedup.bam M=$EVDIR/$root.metric.txt
+picard -Xmx14g -Djava.io.tmpdir=. MarkDuplicates I=$BAMFILE O=$root.dedup.bam M=$root.metric.txt

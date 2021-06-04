@@ -1,28 +1,303 @@
-# The first rule in the Snakefile defines the default rule
-# For now we define all the output files based on resources/NC_045512.fasta
+configfile: "config/config.yaml"
+
+include: "rules/common.smk"
+
 rule all:
     input:
-        multiext("resources/NC_045512.fasta", ".amb", ".ann", ".bwt", ".pac", ".sa"), # bwa index files
-        "resources/NC_045512.fasta.fai", # samtools index file
-        "resources/NC_045512.dict", # picard dictionary file
+        get_final_output(),
 
-rule bwa_index_genome:
+rule index_reference_genome:
+    message: "Index Reference Genome {input}."
     input: "{genome}"
-    output: multiext("{genome}", ".amb", ".ann", ".bwt", ".pac", ".sa")
-    conda: "envs/bwa_index_genome.yaml"
-    log: "logs/bwa_index_genome_{genome}.log"
-    shell: "bwa index -a is {input} &>{log}"
-
-rule samtools_index_genome:
-    input: "{genome}"
-    output: "{genome}.fai"
-    conda: "envs/samtools_index_genome.yaml"
-    log: "logs/samtools_index_genome_{genome}.log"
-    shell: "samtools faidx {input} &>{log}"
+    output: multiext("{genome}", ".amb", ".ann", ".bwt", ".pac", ".sa", ".fai"),
+    conda: "envs/environment.yml"
+    params:
+        script=srcdir("../scripts/index-reference-genome.sh")
+    shell: "{params.script} {input}"
 
 rule create_picard_dictionary:
+    message: "Create Picard Dictionary {input}."
     input: "{genomename}.fasta"
     output: "{genomename}.dict"
-    conda: "envs/create_picard_dictionary.yaml"
-    log: "logs/create_picard_dictionary_{genomename}.log"
-    shell: "picard CreateSequenceDictionary R={input} O={output} &>{log}"
+    conda: "envs/environment.yml"
+    params:
+        script=srcdir("../scripts/create-picard-dictionary.sh")
+    shell: "{params.script} {input} {output}"
+
+rule remove_adapters:
+    message: "Remove Nextera Adapters {input}."
+    input: config["inputdir"] + "/{prefix}.fastq.gz"
+    output: "{prefix}_trimmed.fq.gz"
+    conda: "envs/environment.yml"
+    log: "logs/remove_adapters/{prefix}.log"
+    params:
+         script=srcdir("../scripts/remove-nextera-adapters.sh")
+    shell: "{params.script} {input} &>{log}"
+
+rule map_bwa_cleaned_libs:
+    message: "Map using BWA with the cleaned libraries {input.readfile}."
+    input:
+        readfile="{sample}" + config["readsuffix"] + "_trimmed.fq.gz",
+        genome=config["genome"],
+        genome_indexes=GENOME_INDEX_FILES, # ensure genome is indexed created before running this step
+    output: "{sample}.sam"
+    conda: "envs/environment.yml"
+    log: "logs/map_bwa_cleaned_libs/{sample}.log"
+    params:
+        script=srcdir("../scripts/map-bwa-cleaned-libs.sh")
+    shell: "{params.script} {input.readfile} {input.genome} &>{log}"
+
+rule create_bam_from_sam:
+    message: "Create BAM from SAM and make an index {input}."
+    input: "{sample}.sam"
+    output: "{sample}.bam"
+    conda: "envs/environment.yml"
+    log: "logs/create_bam_from_sam/{sample}.log"
+    resources:
+        mem_mb=1000
+    params:
+        script=srcdir("../scripts/create-bam-from-sam.sh")
+    shell: "{params.script} {input} &>{log}"
+
+rule mark_duplicates:
+    message: "'Deduplicate' or mark PCR duplicates {input}."
+    input: "{sample}.bam"
+    output:
+        bam="{sample}.dedup.bam",
+        metrics="{sample}.metric.txt",
+    conda: "envs/environment.yml"
+    log: "logs/mark_duplicates/{sample}.log"
+    resources:
+        mem_mb=15360 # 15G
+    params:
+        script=srcdir("../scripts/mark-duplicates.sh")
+    shell: "{params.script} {input} &>{log}"
+
+rule convert_bam_to_vcf:
+    message: "BAM TO VCF USING BCFTOOLS TO CREATE A PRELIMINAR VCF FILE {input.bamfile}."
+    input:
+        bamfile="{sample}.dedup.bam",
+        genome=config["genome"],
+        genome_indexes=GENOME_INDEX_FILES, # ensure genome is indexed created before running this step
+    output: "{sample}.raw.vcf"
+    conda: "envs/environment.yml"
+    log: "logs/convert_bam_to_vcf/{sample}.log"
+    resources:
+        mem_mb=10240 # 10G
+    params:
+        script=srcdir("../scripts/convert-bam-to-vcf.sh")
+    shell: "{params.script} {input.bamfile} {input.genome} &>{log}"
+
+rule filter_raw_snps:
+    message: "Filter raw SNPs using bcftools as a template of known variable sites {input}."
+    input: "{sample}.raw.vcf"
+    output: "{sample}.filt.vcf.gz"
+    conda: "envs/environment.yml"
+    log: "logs/filter_raw_snps/{sample}.log"
+    resources:
+        mem_mb=100
+    params:
+        script=srcdir("../scripts/filter-raw-snps.sh")
+    shell: "{params.script} {input} &>{log}"
+
+rule update_read_groups:
+    message: "Add sme info for the read groups {input}."
+    input: "{sample}.dedup.bam"
+    output: "{sample}.bam2"
+    conda: "envs/environment.yml"
+    log: "logs/update_read_groups/{sample}.log"
+    params:
+        script=srcdir("../scripts/update-read-groups.sh")
+    shell: "{params.script} {input} &>{log}"
+
+rule run_base_recalibration:
+    message: "Base recalibration. First pass of the Base Quality Score Recalibration (BQSR) {input.bamfile}."
+    input:
+       bamfile="{sample}.bam2",
+       genome=config["genome"],
+       genome_indexes=GENOME_INDEX_FILES, # ensure genome is indexed created before running this step
+       filtered_snps="{sample}.filt.vcf.gz"
+    output: "{sample}.table"
+    conda: "envs/environment.yml"
+    log: "logs/run_base_recalibration/{sample}.log"
+    resources:
+        mem_mb=16384 # 16G
+    params:
+        script=srcdir("../scripts/run-base-recalibration.sh")
+    shell: "{params.script} {input.bamfile} {input.genome} &>{log}"
+
+rule apply_bqsr:
+    message: "APPLY BQSR (Apply a linear base quality recalibration model) {input.bamfile}."
+    input:
+       bamfile="{sample}.bam2",
+       recal="{sample}.table",
+       genome=config["genome"],
+       genome_indexes=GENOME_INDEX_FILES, # ensure genome is indexed created before running this step
+    output: "{sample}.bqsr.bam"
+    conda: "envs/environment.yml"
+    log: "logs/apply_bqsr/{sample}.log"
+    resources:
+        mem_mb=10240 # 10G
+    params:
+        script=srcdir("../scripts/apply-bqsr.sh")
+    shell: "{params.script} {input.bamfile} {input.genome} &>{log}"
+
+rule collect_statistics:
+    message: "Collect statistics: Produces a summary of alignment metrics from a BAM file {input.bamfile}."
+    input:
+       bamfile="{sample}.bqsr.bam",
+       genome=config["genome"],
+       genome_indexes=GENOME_INDEX_FILES, # ensure genome is indexed created before running this step
+    output: "{sample}.stat.txt"
+    conda: "envs/environment.yml"
+    log: "logs/collect_statistics/{sample}.log"
+    resources:
+        mem_mb=4000
+    params:
+        script=srcdir("../scripts/collect-statistics.sh")
+    shell: "{params.script} {input.bamfile} {input.genome} &>{log}"
+
+rule run_depth_coverage:
+    message: "How much of the reference genome is covered by more than 1 read? {input}."
+    input: "{sample}.bqsr.bam"
+    output: "{sample}.depth.bed"
+    conda: "envs/environment.yml"
+    log: "logs/run_depth_coverage/{sample}.log"
+    resources:
+        mem_mb=100
+    params:
+        script=srcdir("../scripts/run-depth-coverage.sh")
+    shell: "{params.script} {input} &>{log}"
+
+rule create_coverage_table:
+    message: "Make a table with coverage information {input}."
+    input: expand("{sample}.bam", sample=SAMPLES)
+    output: "results/coverage.raw.tab"
+    conda: "envs/environment.yml"
+    log: "logs/create_coverage_table.log"
+    params:
+        script=srcdir("../scripts/create-coverage-table.sh")
+    shell: "{params.script} {input} &>{log}"
+
+rule create_coverage_bqsr_table:
+    message: "Make a table with BQSR coverage information {input}."
+    input: expand("{sample}.bqsr.bam", sample=SAMPLES)
+    output: "results/coverage.gatk.tab"
+    conda: "envs/environment.yml"
+    log: "logs/create_coverage_bqsr_table.log"
+    params:
+        script=srcdir("../scripts/create-coverage-bqsr-table.sh")
+    shell: "{params.script} {input} &>{log}"
+
+rule run_haplotype_caller:
+    message: "HAPLOTYPE CALLER: Call germline SNPs and indels via local re-assembly of haplotypes {input.bamfile}."
+    input:
+       bamfile="{sample}.bqsr.bam",
+       genome=config["genome"],
+       genome_indexes=GENOME_INDEX_FILES, # ensure genome is indexed created before running this step
+    output: "{sample}.gatk.vcf"
+    conda: "envs/environment.yml"
+    log: "logs/run_haplotype_caller/{sample}.log"
+    resources:
+        mem_mb=2000
+    params:
+        script=srcdir("../scripts/run-haplotype-caller.sh")
+    shell: "{params.script} {input.bamfile} {input.genome} &>{log}"
+
+rule filter_vcfs:
+    message: "FILTER VCFs (Filter variant calls based on INFO and/or FORMAT annotations) {input.vcf}."
+    input:
+       vcf="{sample}.gatk.vcf",
+       genome=config["genome"],
+       genome_indexes=GENOME_INDEX_FILES, # ensure genome is indexed created before running this step
+    output: "results/{sample}.gatk.filt.vcf"
+    conda: "envs/environment.yml"
+    log: "logs/filter_vcfs/{sample}.log"
+    params:
+        script=srcdir("../scripts/filter-vcfs.sh")
+    shell: "{params.script} {input.vcf} {input.genome} &>{log}"
+
+rule create_genotype_table:
+    message: "GENOTYPE TABLE (Extract specified fields for each variant in a VCF file to a tab-delimited table) {input.vcf}."
+    input:
+       vcf="results/{sample}.gatk.filt.vcf",
+    output: "results/{sample}.gatk.tab"
+    conda: "envs/environment.yml"
+    log: "logs/create_genotype_table/{sample}.log"
+    params:
+        script=srcdir("../scripts/create-genotype-table.sh")
+    shell: "{params.script} {input.vcf} &>{log}"
+
+rule run_bedtools_merge:
+    message: "Make final consensus fasta sequence using the SNPs in the vcf file {input.bed}."
+    input:
+       bed="{sample}.depth.bed",
+    output: "{sample}.merged.bed"
+    conda: "envs/environment.yml"
+    log: "logs/run_bedtools_merge/{sample}.log"
+    params:
+        script=srcdir("../scripts/run-bedtools-merge.sh")
+    shell: "{params.script} {input.bed} &>{log}"
+
+rule run_bcftools_consensus:
+    message: "Run bcftools consensus {input.vcf}."
+    input:
+       vcf="results/{sample}.gatk.filt.vcf",
+       mergedbed="{sample}.merged.bed",
+       genome=config["genome"],
+       genome_index=GENOME_INDEX_FILES, # ensure genome is indexed created before running this step
+    output: "results/{sample}.cleaned.fasta"
+    conda: "envs/environment.yml"
+    log: "logs/run_bcftools_consensus/{sample}.log"
+    params:
+        script=srcdir("../scripts/run-bcftools-consensus.sh")
+    shell: "{params.script} {input.vcf} {input.genome} &>{log}"
+
+rule intersect_spike:
+    message: "Intersect vcf files with spike.bed {input.vcf}."
+    input:
+       vcf="results/{sample}.gatk.filt.vcf",
+       spike=config["spike"],
+    output:
+       "results/{sample}.depth.tab",
+       "results/{sample}.spike.tab",
+    conda: "envs/environment.yml"
+    log: "logs/intersect_spike/{sample}.log"
+    params:
+        script=srcdir("../scripts/intersect-spike.sh")
+    shell: "{params.script} {input.vcf} {input.spike} &>{log}"
+
+rule run_spike_genotype_compiler:
+    message: "Run genotype compiler on spike filtered data {input}."
+    input: expand("results/{sample}.spike.tab", sample=SAMPLES)
+    output: "results/spike_genotypes.final.tab",
+    conda: "envs/environment.yml"
+    log: "logs/run_spike_genotype_compiler.log"
+    params:
+        script=srcdir("../scripts/run-spike-genotype-compiler.sh"),
+        perlscript=srcdir("../scripts/genotype_compiler.pl"),
+    shell: "PERLSCRIPT={params.perlscript} {params.script} {input} &>{log}"
+
+rule run_spike_depth_compiler:
+    message: "Run depth compiler on spike filtered data {input}."
+    input: expand("results/{sample}.depth.tab", sample=SAMPLES)
+    output: "results/spike_depths.final.tab",
+    conda: "envs/environment.yml"
+    log: "logs/run_spike_depth_compiler.log"
+    params:
+        script=srcdir("../scripts/run-spike-depth-compiler.sh"),
+        perlscript=srcdir("../scripts/depth_compiler.pl"),
+    shell: "PERLSCRIPT={params.perlscript} {params.script} {input} &>{log}"
+
+rule run_pangolin:
+    message: "Run pangolin {input}."
+    input: expand("results/{sample}.cleaned.fasta", sample=SAMPLES)
+    output:
+        "consensus_sequences.fasta",
+        "results/" + config["project"] + ".csv",
+    conda: "envs/pangolin.yml"
+    log: "logs/run_pangolin.log"
+    params:
+        script=srcdir("../scripts/run-pangolin.sh"),
+        project=config['project'],
+    shell: "PROJECTNAME={params.project} {params.script} {input} &>{log}"

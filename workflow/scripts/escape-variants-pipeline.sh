@@ -147,7 +147,6 @@ sbatch --wait "--output=${LOGDIR}/create-coverage-table-%j.out" \
 echo "GATK Step 6c - Done"
 echo ""
 
-
 echo "GATK Step 7 - HAPLOTYPE CALLER: Call germline SNPs and indels via local re-assembly of haplotypes"
 ls $EVDIR/*bqsr.bam > $EVDIR/bqsrs.list
 ./scripts/sbatch-array.sh \

@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 # Create a spreadsheet combining supermetadata and genotype data
-#
-# Required Environment Variables:
-#  EVDIR - working directory containing supermetadata.tab and spike_genotypes.final.tab
+# Assumes working directory contains supermetadata.tab and spike_genotypes.final.tab
 #
 import pandas as pd
-import os
 
 # Setup input files and output path based on $EVDIR
-evdir = os.environ.get("EVDIR") + "/"
-supermetadata_path = evdir + "supermetadata.tab"
-spike_genotypes_path = evdir + "spike_genotypes.final.tab"
-output_path = evdir + "results.xlsx"
+supermetadata_path = "supermetadata.tab"
+spike_genotypes_path = "spike_genotypes.final.tab"
+output_path = "results.xlsx"
 
 # read supermetadata using Sample as an index column
 supermetadata = pd.read_csv(supermetadata_path, sep="$", index_col=0,

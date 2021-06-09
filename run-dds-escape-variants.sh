@@ -16,35 +16,37 @@ ShowHelp()
    echo "-j numjobs       number of array jobs to run in parallel - defaults to 4"
    echo "-D datetab       date.tab file used to create supermetadata.tab - defaults to skipping the supermetadata step"
    echo ""
-   echo "NOTE: The input genome must first be indexed by running ./setup-variants-pipeline.sh."
    echo "NOTE: The genome and datadir must be shared across the slurm cluster."
    echo ""
 }
 
-REV_ARGS=""
+export NUM_CORES=10
+export SNAKEMAKE_PROFILE=$(readlink -e slurm/)
+DATETAB_OPT=""
+GENOME=$(readlink -e resources/NC_045512.fasta)
+SPIKEBED=$(readlink -e resources/spike.bed)
 while getopts "g:d:i:m:w:j:D:" OPTION; do
     case $OPTION in
     g)
-        export GENOME=$(readlink -e $OPTARG)
+        GENOME=$(readlink -e $OPTARG)
         ;;
     d)
-        export DATADIR=$(readlink -e $OPTARG)
+        DATADIR=$(readlink -f $OPTARG)
         ;;
     m)
-        REV_ARGS="$REV_ARGS -m $OPTARG "
+        RUN_MODE=$OPTARG
         ;;
     i)
-        export DDS_INPUT_PROJECT=$OPTARG
+        DDS_INPUT_PROJECT=$OPTARG
         ;;
     j)
-        REV_ARGS="$REV_ARGS -j $OPTARG "
+        export NUM_CORES=$OPTARG
         ;;
     w)
         WORKDIR=$(readlink -e $OPTARG)
-        REV_ARGS="$REV_ARGS -w $WORKDIR "
         ;;
     D)
-        REV_ARGS="$REV_ARGS -D $OPTARG "
+        DATETAB_OPT="datetab: $(readlink -e $OPTARG)"
         ;;
     esac
 done
@@ -58,14 +60,14 @@ then
    ShowHelp
    exit 1
 fi
-if [ -z "DATADIR" ]
+if [ -z "$DATADIR" ]
 then
    echo "ERROR: Missing required '-d datadir' argument."
    echo ""
    ShowHelp
    exit 1
 fi
-if [ -z "DDS_INPUT_PROJECT" ]
+if [ -z "$DDS_INPUT_PROJECT" ]
 then
    echo "ERROR: Missing required '-i inputproject' argument."
    echo ""
@@ -73,13 +75,30 @@ then
    exit 1
 fi
 
+case $RUN_MODE in
+  c)
+    RUN_MODE="campus"
+    ;;
+  h)
+    RUN_MODE="hospital"
+    ;;
+  e)
+    RUN_MODE="experimental"
+    ;;
+  *)
+    echo "ERROR: Invalid '-m mode' argument: $RUN_MODE"
+    exit 1
+    ;;
+esac
+
 
 # declare directory names
 INPUT_DATADIR=$DATADIR/input
-INPUT_PROJECT_DIR=$INPUT_DATADIR/$DDS_INPUT_PROJECT
+INPUT_PROJECT_DIR=$INPUT_DATADIR/$DDS_INPUT_PROJECT/
+export WORKDIR=$DATADIR/work/$DDS_INPUT_PROJECT/
 OUTPUT_DATADIR=$DATADIR/output
 OUTPUT_RESULTS_DIR=$OUTPUT_DATADIR/$DDS_INPUT_PROJECT
-
+export SM_CONDA_PREFIX=$DATADIR/conda
 
 echo "DDS Escape Variants Starting"
 echo ""
@@ -97,32 +116,41 @@ mkdir -p $OUTPUT_RESULTS_DIR
 export PROJECT=$DDS_INPUT_PROJECT
 export DESTINATION=$INPUT_PROJECT_DIR
 echo "Downloading $PROJECT to $DESTINATION"
-bash scripts/dds-download.sh
+./scripts/dds-download.sh
 echo ""
 
-
-echo "Running escape variants pipeline - logs at $OUTPUT_RESULTS_DIR/logs"
-# run pipeline
-SBATCH_FLAGS="--wait" ./run-escape-variants.sh \
-  $REV_ARGS \
-  -p $DDS_INPUT_PROJECT \
-  -g $GENOME \
-  -i $INPUT_PROJECT_DIR \
-  -o $OUTPUT_RESULTS_DIR \
-  -l $OUTPUT_RESULTS_DIR/logs
+# create config/config.yaml
+mkdir -p $WORKDIR/config
+cat <<EOF > $WORKDIR/config/config.yaml
+project: $DDS_INPUT_PROJECT
+genome: $GENOME
+spike: $SPIKEBED
+inputdir: $INPUT_PROJECT_DIR
+mode: $RUN_MODE
+$DATETAB_OPT
+EOF
+echo "Created snakemake $WORKDIR/config/config.yaml file:"
+cat $WORKDIR/config/config.yaml
 echo ""
 
+echo "Running escape variants pipeline - logs at $WORKDIR/logs"
+./scripts/run-snakemake.sh
 
-# upload results to DDS
+echo "Copying results to $OUTPUT_RESULTS_DIR"
+cp -r $WORKDIR/results/* $OUTPUT_RESULTS_DIR/.
+cp -r $WORKDIR/logs $OUTPUT_RESULTS_DIR/logs
+
+## upload results to DDS
 export PROJECT=${DDS_INPUT_PROJECT}_results
 export SOURCE="$OUTPUT_RESULTS_DIR/*"
 echo "Uploading $DESTINATION to $PROJECT"
 bash scripts/dds-upload.sh
 echo ""
 
+echo "Deleting $WORKDIR"
+rm -rf $WORKDIR
 
 echo "Deleting $INPUT_PROJECT_DIR"
 rm -rf $INPUT_PROJECT_DIR
-
 
 echo "DDS Escape Variants Done"

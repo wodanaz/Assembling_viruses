@@ -11,7 +11,7 @@ VCFFILE=$1
 GENOME=$2
 
 root=`basename $VCFFILE .gatk.vcf`
-gatk --java-options "-Djava.io.tmpdir=." VariantFiltration -R $GENOME -V $VCFFILE -O $root.gatk.filt.vcf \
+gatk --java-options "-Djava.io.tmpdir=." VariantFiltration -R $GENOME -V $VCFFILE -O results/$root.gatk.filt.vcf \
    --filter-expression 'QD < 10.0' \
    --filter-name QD2 \
    --filter-expression 'FS > 60.0'  \

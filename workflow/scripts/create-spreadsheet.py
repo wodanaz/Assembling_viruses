@@ -5,9 +5,9 @@
 import pandas as pd
 
 # Setup input files and output path based on $EVDIR
-supermetadata_path = "supermetadata.tab"
-spike_genotypes_path = "spike_genotypes.final.tab"
-output_path = "results.xlsx"
+supermetadata_path = "results/supermetadata.tab"
+spike_genotypes_path = "results/spike_genotypes.final.tab"
+output_path = "results/results.xlsx"
 
 # read supermetadata using Sample as an index column
 supermetadata = pd.read_csv(supermetadata_path, sep="$", index_col=0,

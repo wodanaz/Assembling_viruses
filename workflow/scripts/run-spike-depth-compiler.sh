@@ -8,4 +8,4 @@ set -e
 
 perl $PERLSCRIPT "$@" > spike_depths.tab
 cp spike_depths.tab spike_depths.backup.tab
-sed -r 's/ /\t/g' spike_depths.tab | sed -r 's/.depth.tab//g' | sort -k1,1n  > spike_depths.final.tab
+sed -r 's/ /\t/g' spike_depths.tab | sed -r 's/.depth.tab//g' | sort -k1,1n  > results/spike_depths.final.tab

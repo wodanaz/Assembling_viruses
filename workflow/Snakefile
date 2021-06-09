@@ -7,24 +7,24 @@ GENOME_INDEX_FILES.append(config["genome"].replace(".fasta", ".dict"))
 # Defines the files to be created by the workflow
 def get_final_output():
     final_output = []
-    final_output += expand("{sample}.gatk.tab", sample=SAMPLES)
-    final_output += expand("{sample}.gatk.filt.vcf", sample=SAMPLES)
-    final_output.append("coverage.gatk.tab")
-    final_output.append("coverage.raw.tab")
-    final_output += expand("{sample}.cleaned.fasta", sample=SAMPLES)
+    final_output += expand("results/{sample}.gatk.tab", sample=SAMPLES)
+    final_output += expand("results/{sample}.gatk.filt.vcf", sample=SAMPLES)
+    final_output.append("results/coverage.gatk.tab")
+    final_output.append("results/coverage.raw.tab")
+    final_output += expand("results/{sample}.cleaned.fasta", sample=SAMPLES)
 
     if "datetab" in config:
-        final_output.append(config["project"] + ".csv")
-        final_output.append(config["project"] + "_lineages_of_concern.csv")
-        final_output.append("supermetadata.tab")
-        final_output.append(config["project"] + ".fasta")
-        final_output.append("results.xlsx")
+        final_output.append("results/" + config["project"] + ".csv")
+        final_output.append("results/" + config["project"] + "_lineages_of_concern.csv")
+        final_output.append("results/supermetadata.tab")
+        final_output.append("results/" + config["project"] + ".fasta")
+        final_output.append("results/results.xlsx")
 
     if config["mode"] != 'experimental':
-        final_output += expand("{sample}.spike.tab", sample=SAMPLES)
-        final_output.append("spike_depths.final.tab")
-        final_output += expand("{sample}.depth.tab", sample=SAMPLES)
-        final_output.append("spike_genotypes.final.tab")
+        final_output += expand("results/{sample}.spike.tab", sample=SAMPLES)
+        final_output.append("results/spike_depths.final.tab")
+        final_output += expand("results/{sample}.depth.tab", sample=SAMPLES)
+        final_output.append("results/spike_genotypes.final.tab")
 
     return final_output
 
@@ -37,24 +37,22 @@ rule index_reference_genome:
     input: "{genome}"
     output: multiext("{genome}", ".amb", ".ann", ".bwt", ".pac", ".sa", ".fai"),
     conda: "envs/environment.yml"
-    log: "logs/index_reference_genome/{genome}.log"
     params:
         script=srcdir("scripts/index-reference-genome.sh")
-    shell: "{params.script} {input} &>{log}"
+    shell: "{params.script} {input}"
 
 rule create_picard_dictionary:
     message: "Create Picard Dictionary {input}."
     input: "{genomename}.fasta"
     output: "{genomename}.dict"
     conda: "envs/environment.yml"
-    log: "logs/create_picard_dictionary/{genomename}.log"
     params:
         script=srcdir("scripts/create-picard-dictionary.sh")
-    shell: "{params.script} {input} {output} &>{log}"
+    shell: "{params.script} {input} {output}"
 
 rule remove_adapters:
     message: "Remove Nextera Adapters {input}."
-    input: "{prefix}.fastq.gz"
+    input: config["inputdir"] + "{prefix}.fastq.gz"
     output: "{prefix}_trimmed.fq.gz"
     conda: "envs/environment.yml"
     log: "logs/remove_adapters/{prefix}.log"
@@ -123,7 +121,7 @@ rule filter_raw_snps:
     conda: "envs/environment.yml"
     log: "logs/filter_raw_snps/{sample}.log"
     resources:
-        mem_mb=10
+        mem_mb=100
     params:
         script=srcdir("scripts/filter-raw-snps.sh")
     shell: "{params.script} {input} &>{log}"
@@ -192,7 +190,7 @@ rule run_depth_coverage:
     conda: "envs/environment.yml"
     log: "logs/run_depth_coverage/{sample}.log"
     resources:
-        mem_mb=10
+        mem_mb=100
     params:
         script=srcdir("scripts/run-depth-coverage.sh")
     shell: "{params.script} {input} &>{log}"
@@ -200,7 +198,7 @@ rule run_depth_coverage:
 rule create_coverage_table:
     message: "Make a table with coverage information {input}."
     input: expand("{sample}.bam", sample=SAMPLES)
-    output: "coverage.raw.tab"
+    output: "results/coverage.raw.tab"
     conda: "envs/environment.yml"
     log: "logs/create_coverage_table.log"
     params:
@@ -210,7 +208,7 @@ rule create_coverage_table:
 rule create_coverage_bqsr_table:
     message: "Make a table with BQSR coverage information {input}."
     input: expand("{sample}.bqsr.bam", sample=SAMPLES)
-    output: "coverage.gatk.tab"
+    output: "results/coverage.gatk.tab"
     conda: "envs/environment.yml"
     log: "logs/create_coverage_bqsr_table.log"
     params:
@@ -238,7 +236,7 @@ rule filter_vcfs:
        vcf="{sample}.gatk.vcf",
        genome=config["genome"],
        genome_indexes=GENOME_INDEX_FILES, # ensure genome is indexed created before running this step
-    output: "{sample}.gatk.filt.vcf"
+    output: "results/{sample}.gatk.filt.vcf"
     conda: "envs/environment.yml"
     log: "logs/filter_vcfs/{sample}.log"
     params:
@@ -248,8 +246,8 @@ rule filter_vcfs:
 rule create_genotype_table:
     message: "GENOTYPE TABLE (Extract specified fields for each variant in a VCF file to a tab-delimited table) {input.vcf}."
     input:
-       vcf="{sample}.gatk.filt.vcf",
-    output: "{sample}.gatk.tab"
+       vcf="results/{sample}.gatk.filt.vcf",
+    output: "results/{sample}.gatk.tab"
     conda: "envs/environment.yml"
     log: "logs/create_genotype_table/{sample}.log"
     params:
@@ -270,11 +268,11 @@ rule run_bedtools_merge:
 rule run_bcftools_consensus:
     message: "Run bcftools consensus {input.vcf}."
     input:
-       vcf="{sample}.gatk.filt.vcf",
+       vcf="results/{sample}.gatk.filt.vcf",
        mergedbed="{sample}.merged.bed",
        genome=config["genome"],
        genome_index=GENOME_INDEX_FILES, # ensure genome is indexed created before running this step
-    output: "{sample}.cleaned.fasta"
+    output: "results/{sample}.cleaned.fasta"
     conda: "envs/environment.yml"
     log: "logs/run_bcftools_consensus/{sample}.log"
     params:
@@ -284,11 +282,11 @@ rule run_bcftools_consensus:
 rule intersect_spike:
     message: "Intersect vcf files with spike.bed {input.vcf}."
     input:
-       vcf="{sample}.gatk.filt.vcf",
+       vcf="results/{sample}.gatk.filt.vcf",
        spike=config["spike"],
     output:
-       "{sample}.depth.tab",
-       "{sample}.spike.tab",
+       "results/{sample}.depth.tab",
+       "results/{sample}.spike.tab",
     conda: "envs/environment.yml"
     log: "logs/intersect_spike/{sample}.log"
     params:
@@ -297,8 +295,8 @@ rule intersect_spike:
 
 rule run_spike_genotype_compiler:
     message: "Run genotype compiler on spike filtered data {input}."
-    input: expand("{sample}.spike.tab", sample=SAMPLES)
-    output: "spike_genotypes.final.tab",
+    input: expand("results/{sample}.spike.tab", sample=SAMPLES)
+    output: "results/spike_genotypes.final.tab",
     conda: "envs/environment.yml"
     log: "logs/run_spike_genotype_compiler.log"
     params:
@@ -308,8 +306,8 @@ rule run_spike_genotype_compiler:
 
 rule run_spike_depth_compiler:
     message: "Run depth compiler on spike filtered data {input}."
-    input: expand("{sample}.depth.tab", sample=SAMPLES)
-    output: "spike_depths.final.tab",
+    input: expand("results/{sample}.depth.tab", sample=SAMPLES)
+    output: "results/spike_depths.final.tab",
     conda: "envs/environment.yml"
     log: "logs/run_spike_depth_compiler.log"
     params:
@@ -319,11 +317,11 @@ rule run_spike_depth_compiler:
 
 rule run_pangolin:
     message: "Run pangolin {input}."
-    input: expand("{sample}.cleaned.fasta", sample=SAMPLES)
+    input: expand("results/{sample}.cleaned.fasta", sample=SAMPLES)
     output:
         "consensus_sequences.fasta",
-        config["project"] + ".csv",
-        config["project"] + "_lineages_of_concern.csv",
+        "results/" + config["project"] + ".csv",
+        "results/" + config["project"] + "_lineages_of_concern.csv",
     conda: "envs/environment.yml"
     log: "logs/run_pangolin.log"
     params:
@@ -335,13 +333,13 @@ if "datetab" in config:
     rule supermetadata_modify_titles:
         message: "Supermetadata Modify Titles."
         input:
-           project=config["project"] + ".csv",
-           project_lineages=config["project"] + "_lineages_of_concern.csv",
-           coverage_tab="coverage.gatk.tab",
+           project="results/" + config["project"] + ".csv",
+           project_lineages="results/" + config["project"] + "_lineages_of_concern.csv",
+           coverage_tab="results/coverage.gatk.tab",
            datetab=config["datetab"],
         output:
-            "supermetadata.tab",
-            config["project"] + ".fasta",
+            "results/supermetadata.tab",
+            "results/" + config["project"] + ".fasta",
         conda: "envs/environment.yml"
         log: "logs/supermetadata_modify_titles.log"
         params:
@@ -353,10 +351,10 @@ if "datetab" in config:
     rule create_spreadsheet:
         message: "Supermetadata Create Spreadsheet."
         input:
-           supermeatadata="supermetadata.tab",
-           spike_genotypes="spike_genotypes.final.tab",
+           supermetadata="results/supermetadata.tab",
+           spike_genotypes="results/spike_genotypes.final.tab",
         output:
-            "results.xlsx",
+            "results/results.xlsx",
         conda: "envs/environment.yml"
         log: "logs/create_spreadsheet.log"
         params:

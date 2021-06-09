@@ -15,4 +15,4 @@ bcftools view -Oz $VCFFILE > $VCFFILE.gz
 bcftools index $VCFFILE.gz
 bcftools norm -f $GENOME $VCFFILE.gz -Ob -o $root.norm.bcf
 bcftools consensus -m $root.merged.bed -f $GENOME  -p ${root}_ -s ${root} -H A $VCFFILE.gz > $root.masked.fasta
-seqtk trimfq -b 25 -e 25  $root.masked.fasta > $root.cleaned.fasta
+seqtk trimfq -b 25 -e 25  $root.masked.fasta > results/$root.cleaned.fasta

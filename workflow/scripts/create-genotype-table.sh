@@ -10,4 +10,4 @@ set -e
 VCFFILE=$1
 
 root=`basename $VCFFILE .filt.vcf`
-gatk --java-options "-Djava.io.tmpdir=." VariantsToTable -V $VCFFILE -F POS -F TYPE -F REF -F ALT -GF AD -O $root.tab
+gatk --java-options "-Djava.io.tmpdir=." VariantsToTable -V $VCFFILE -F POS -F TYPE -F REF -F ALT -GF AD -O results/$root.tab

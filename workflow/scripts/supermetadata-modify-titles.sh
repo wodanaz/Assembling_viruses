@@ -1,25 +1,26 @@
 #!/usr/bin/env bash
+set -x
 
 if [ "$EVMODE" == "campus" ]
 then
     # campus mode
-    cat $PROJECTNAME.csv | sed -r 's/,/\t/g' | sed -r 's/_NC_045512//g' | awk '{print $1 "\t" $2 }' | sed '1d' > variants.tab
+    cat results/$PROJECTNAME.csv | sed -r 's/,/\t/g' | sed -r 's/_NC_045512//g' | awk '{print $1 "\t" $2 }' | sed '1d' > variants.tab
 fi
 
 if [ "$EVMODE" == "hospital" ]
 then
     # hospital mode
-    cat ${PROJECTNAME}_lineages_of_concern.csv | sed -r 's/,/\t/g' | sed -r 's/\|/\t/g' | awk '{print $1 "\t" $3 }' | sed '1d' > variants.tab
+    cat results/${PROJECTNAME}_lineages_of_concern.csv | sed -r 's/,/\t/g' | sed -r 's/\|/\t/g' | awk '{print $1 "\t" $3 }' | sed '1d' > variants.tab
 fi
 
 # both hospital and campus mode
-sed -r 's/.bqsr//g' coverage.gatk.tab | sed '1d' | awk '{print $1 "\t" $7 }'  | sort -k1d  > coverage.sort.tab
+sed -r 's/.bqsr//g' results/coverage.gatk.tab | sed '1d' | awk '{print $1 "\t" $7 }'  | sort -k1d  > coverage.sort.tab
 
 join -j 1 <(sort coverage.sort.tab) <( sort $DATETAB) | awk '{ print $1 "\t" $2 "\t" $3 }' > metadata1.tab
 
-join -j 1 <(sort variants.tab) <( sort metadata1.tab ) | awk '{ print $1 "$" $2 "$" $3 "$" $4 }' > supermetadata.tab
+join -j 1 <(sort variants.tab) <( sort metadata1.tab ) | awk '{ print $1 "$" $2 "$" $3 "$" $4 }' > results/supermetadata.tab
 
-for i in `cat supermetadata.tab`; do
+for i in `cat results/supermetadata.tab`; do
     root=`echo ${i} | cut -d'$' -f 1`;
     rootA=`echo ${i} | cut -d'$' -f 2`;
     rootB=`echo ${i} | cut -d'$' -f 3`;
@@ -30,4 +31,4 @@ for i in `cat supermetadata.tab`; do
     fi ;
 done
 
-cat *info.fasta > ${PROJECTNAME}.fasta
+cat *info.fasta > results/${PROJECTNAME}.fasta

@@ -8,4 +8,4 @@ set -e
 
 perl $PERLSCRIPT "$@" > spike_genotypes.tab
 cp spike_genotypes.tab spike_genotypes.backup.tab
-sed -r 's/ /\t/g' spike_genotypes.tab | sed -r 's/.spike.tab//g' | sort -k1,1n > spike_genotypes.final.tab
+sed -r 's/ /\t/g' spike_genotypes.tab | sed -r 's/.spike.tab//g' | sort -k1,1n > results/spike_genotypes.final.tab

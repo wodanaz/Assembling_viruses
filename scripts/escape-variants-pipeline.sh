@@ -21,15 +21,6 @@ echo ""
 
 echo "Activating 'escapevariants' conda environment"
 
-# set default value for ANACONDAMODULE to "Anaconda3/2019.10-gcb02"
-ANACONDAMODULE="${ANACONDAMODULE-Anaconda3/2019.10-gcb02}"
-
-# Load the Anaconda module if not empty
-if [ ! -z "$ANACONDAMODULE" ]
-then
-    module load $ANACONDAMODULE
-fi
-
 conda activate escapevariants
 echo ""
 

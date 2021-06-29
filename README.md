@@ -18,7 +18,7 @@ Configuration options:
 - __spike__ -  File path to a bed file containing the spike region. Default value `resources/spike.bed`.
 - __inputdir__ - directory containing input fastq.gz sequences to process. Default value `""` (the base directory of this repo).
 - __mode__ - Determines which version of the pipeline to run. Must be "campus", "hospital", or "experimental". Default value "campus".
-- __datetab__ - Optional path to a tsv file with two columns: SampleName and Date. Not default value.
+- __datetab__ - Optional path to a tsv file with two columns: SampleName and Date. No default value.
 If __inputdir__ is changed to a path other than `""` the genome, spike, datetab should be set to absolute paths.
 Otherwise the workflow will not be able to find these files.
 

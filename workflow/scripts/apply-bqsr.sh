@@ -7,8 +7,6 @@
 # stop if a command fails (non-zero exit status)
 set -e
 
-# The first argument is a file containing filenames to process
-FILENAMES_FILE=$1
 # Determine the file to process in $FILENAMES_FILE based on SLURM_ARRAY_TASK_ID
 BAMFILE=$1
 GENOME=$2

@@ -12,5 +12,5 @@ echo "Running: snakemake --cores $NUM_CORES --directory $WORKDIR --use-conda --c
 snakemake \
     --cores $NUM_CORES \
     --directory $WORKDIR \
-    --use-conda --conda-prefix $CONDA_PREFIX \
+    --use-conda --conda-prefix $SM_CONDA_PREFIX \
     --profile $SNAKEMAKE_PROFILE

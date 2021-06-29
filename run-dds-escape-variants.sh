@@ -6,7 +6,7 @@ ShowHelp()
    # Display Help
    echo "Runs a Slurm pipeline determining escape variants in fastq.gz files, staging data from/to DDS."
    echo
-   echo "usage: $0 -g genome -d datadir -i inputproject -m mode [-w workdir] [-j numjobs] [-D datetab]"
+   echo "usage: $0 -g genome -d datadir -i inputproject -m mode [-w workdir] [-j numjobs] [-D datetab] [-k]"
    echo "options:"
    echo "-g genome        *.fasta genome to use - required"
    echo "-d datadir       directory used to hold input and output files - required"
@@ -15,6 +15,7 @@ ShowHelp()
    echo "-w workdir       directory that will hold a tempdir - defaults to current directory"
    echo "-j numjobs       number of array jobs to run in parallel - defaults to 4"
    echo "-D datetab       date.tab file used to create supermetadata.tab - defaults to skipping the supermetadata step"
+   echo "-k               Keep working directory. When passed the working directory will not be deleted"
    echo ""
    echo "NOTE: The genome and datadir must be shared across the slurm cluster."
    echo ""
@@ -25,7 +26,8 @@ export SNAKEMAKE_PROFILE=$(readlink -e slurm/)
 DATETAB_OPT=""
 GENOME=$(readlink -e resources/NC_045512.fasta)
 SPIKEBED=$(readlink -e resources/spike.bed)
-while getopts "g:d:i:m:w:j:D:" OPTION; do
+CLEANUP_WORKDIR=Y
+while getopts "g:d:i:m:w:j:D:k" OPTION; do
     case $OPTION in
     g)
         GENOME=$(readlink -e $OPTARG)
@@ -47,6 +49,9 @@ while getopts "g:d:i:m:w:j:D:" OPTION; do
         ;;
     D)
         DATETAB_OPT="datetab: $(readlink -e $OPTARG)"
+        ;;
+    k)
+        CLEANUP_WORKDIR=N
         ;;
     esac
 done
@@ -147,8 +152,11 @@ echo "Uploading $DESTINATION to $PROJECT"
 bash scripts/dds-upload.sh
 echo ""
 
-echo "Deleting $WORKDIR"
-rm -rf $WORKDIR
+if [ "$CLEANUP_WORKDIR" == "Y" ]
+then
+    echo "Deleting $WORKDIR"
+    rm -rf $WORKDIR
+fi
 
 echo "Deleting $INPUT_PROJECT_DIR"
 rm -rf $INPUT_PROJECT_DIR

@@ -3,78 +3,67 @@
 #
 # Runs escape variants pipeline as an sbatch job
 # Processes *.fastq.gz files using the genome supplied.
-# The genome file must end with the .fasta extension and was previously indexed via ./setup-escape-variants.sh.
 
 ShowHelp()
 {
    # Display Help
    echo "Runs a Slurm pipeline determining escape variants in fastq.gz files."
    echo
-   echo "usage: $0 -g genome -i inputdir -m mode [-o outdir] [-w workdir] [-l logdir] [-e email] [-p project] [-j numjobs] [-d] [-D datetab]"
+   echo "usage: $0 -g genome -d datadir -p inputproject -m mode [-j numjobs] [-D datetab] [-k] [-s] [-u]"
    echo "options:"
-   echo "-g genome    *.fasta genome to use - required"
-   echo "-i inputdir  directory containing *.fastq.gz files to process - required"
-   echo "-m mode      run mode: 'h' (hospital surveillance) or 'c' (campus surveillance ) or 'e' (experimental) - required"
-   echo "-o outdir    directory to hold output files - defaults to current directory"
-   echo "-w workdir   directory that will hold a tempdir - defaults to current directory"
-   echo "-l logdir    directory that will hold sbatch logs - defaults to /logs within outdir"
-   echo "-e email     email address to notify on pipeline completion - defaults to empty(no email sent)"
-   echo "-p project   name of the project (output filenames) - defaults to sars-cov2"
-   echo "-j numjobs   number of array jobs to run in parallel - defaults to 4"
-   echo "-D datetab   date.tab file used to create supermetadata.tab - defaults to skipping the supermetadata step"
-   echo "-d           debug mode - skips deleting the tempdir"
+   echo "-g genome        *.fasta genome to use - required"
+   echo "-d datadir       directory used to hold input and output files - required"
+   echo "-i inputproject  project directory within datadir/input to process - required"
+   echo "-m mode          run mode: 'h' (hospital surveillance) or 'c' (campus surveillance ) or 'e' (experimental) - required"
+   echo "-j numjobs       number of array jobs to run in parallel - defaults to 4"
+   echo "-D datetab       date.tab file used to create supermetadata.tab - defaults to skipping the supermetadata step"
+   echo "-k               Keep working directory. When passed the working directory will not be deleted"
+   echo "-s               Stage input project from DDS - defaults to not downloading data"
+   echo "-u               Upload results to DDS - defaults to not uploading results"
    echo ""
-   echo "NOTE: The input genome must first be indexed by running ./setup-variants-pipeline.sh."
-   echo "NOTE: The inputdir, outdir, logdir, and workdir must be directories shared across the slurm cluster."
+   echo "NOTE: The genome file, datetab file, and datadir directory must be shared across the slurm cluster."
    echo ""
 }
 
-# set default argument values
-export WORKDIR=$(pwd)
-export OUTDIR=$(pwd)
-export LOGDIR="$OUTDIR/logs"
-export LOGSUFFIX=$$
-export DELETE_EVTMPDIR=Y
-export PROJECTNAME=sars-cov2
-export EVMODE=""
-export DATETAB=""
-export SPIKEBED="spike.bed"
-
-# parse arguments
-while getopts "g:i:m:o:w:l:e:dp:j:D:" OPTION; do
+export NUM_CORES=10
+export SNAKEMAKE_PROFILE=$(readlink -e slurm/)
+DATETAB_OPT=""
+GENOME=$(readlink -e resources/NC_045512.fasta)
+SPIKEBED=$(readlink -e resources/spike.bed)
+CLEANUP_WORKDIR=Y
+DOWNLOAD_PROJECT=N
+UPLOAD_RESULTS=N
+while getopts "g:d:i:m:w:j:D:k" OPTION; do
     case $OPTION in
     g)
-        export GENOME=$OPTARG
-        ;;
-    i)
-        export INPUTDIR=$OPTARG
-        ;;
-    m)
-        export EVMODE=$OPTARG
-        ;;
-    o)
-        export OUTDIR=$OPTARG
-        ;;
-    w)
-        export WORKDIR=$OPTARG
-        ;;
-    l)
-        export LOGDIR=$OPTARG
-        ;;
-    e)
-        export EMAIL=$OPTARG
-        ;;
-    p)
-        export PROJECTNAME=$OPTARG
-        ;;
-    j)
-        export MAX_ARRAY_JOBS=$OPTARG
+        GENOME=$(readlink -e $OPTARG)
         ;;
     d)
-        export DELETE_EVTMPDIR=N
+        DATADIR=$(readlink -f $OPTARG)
+        ;;
+    m)
+        RUN_MODE=$OPTARG
+        ;;
+    i)
+        DDS_INPUT_PROJECT=$OPTARG
+        ;;
+    j)
+        export NUM_CORES=$OPTARG
+        ;;
+    w)
+        WORKDIR=$(readlink -e $OPTARG)
         ;;
     D)
-        export DATETAB=$OPTARG
+        DATETAB_OPT="datetab: $(readlink -e $OPTARG)"
+        ;;
+    k)
+        CLEANUP_WORKDIR=N
+        ;;
+    s)
+        DOWNLOAD_PROJECT=Y
+        ;;
+    u)
+        UPLOAD_RESULTS=Y
         ;;
     esac
 done
@@ -87,59 +76,108 @@ then
    ShowHelp
    exit 1
 fi
-if [ -z "INPUTDIR" ]
+if [ -z "$DATADIR" ]
 then
-   echo "ERROR: Missing required '-i inputdir' argument."
+   echo "ERROR: Missing required '-d datadir' argument."
    echo ""
    ShowHelp
    exit 1
 fi
-# make sure mode is "h", "c" or "e"
-if [[ "$EVMODE" != "h" && "$EVMODE" != "c" && "$EVMODE" != "e" ]]
+if [ -z "$DDS_INPUT_PROJECT" ]
 then
-   echo "ERROR: Required '-m mode' argument must be 'h', 'c' or 'e'."
+   echo "ERROR: Missing required '-i inputproject' argument."
    echo ""
    ShowHelp
    exit 1
 fi
 
-# check that the genome dictionary has been created by ./setup-escape-variants.sh
-GENOME_BASE_NAME=$(basename $GENOME .fasta)
-GENOME_DICTIONARY="$GENOME_BASE_NAME.dict"
-if [[ ! -f "$GENOME_DICTIONARY" ]]
-then
-    echo "ERROR: Genome dictionary file $GENOME_DICTIONARY not found."
-    echo "To fix run ./setup-escape-variants.sh -g $GENOME"
-    echo ""
+case $RUN_MODE in
+  c)
+    RUN_MODE="campus"
+    ;;
+  h)
+    RUN_MODE="hospital"
+    ;;
+  e)
+    RUN_MODE="experimental"
+    ;;
+  *)
+    echo "ERROR: Invalid '-m mode' argument: $RUN_MODE"
     exit 1
-fi
+    ;;
+esac
 
 
-# check that the config.sh has been setup
-if [ -f config.sh ]
+# declare directory names
+INPUT_DATADIR=$DATADIR/input
+INPUT_PROJECT_DIR=$INPUT_DATADIR/$DDS_INPUT_PROJECT/
+export WORKDIR=$DATADIR/work/$DDS_INPUT_PROJECT/
+OUTPUT_DATADIR=$DATADIR/output
+OUTPUT_RESULTS_DIR=$OUTPUT_DATADIR/$DDS_INPUT_PROJECT
+export SM_CONDA_PREFIX=$DATADIR/conda
+
+echo "Escape Variants Starting"
+echo ""
+
+
+# make base input directory if necessary
+mkdir -p $INPUT_DATADIR
+# make base output directory if necessary
+mkdir -p $OUTPUT_DATADIR
+# make output results directory if necessary so logs parent directory exists
+mkdir -p $OUTPUT_RESULTS_DIR
+
+
+if [ "$DOWNLOAD_PROJECT" == "Y" ]
 then
-   source config.sh
-else
-   echo "ERROR: Missing config.sh config file."
-   echo "To fix run:"
-   echo "  cp example-config.sh config.sh"
-   echo ""
-   exit 1
+    # download project from DDS
+    export PROJECT=$DDS_INPUT_PROJECT
+    export DESTINATION=$INPUT_PROJECT_DIR
+    echo "Downloading $PROJECT to $DESTINATION"
+    ./scripts/dds-download.sh
+    echo ""
 fi
 
-# create logs directory to hold slurm logs (this directory must exist before sbatch can run)
-mkdir -p $LOGDIR
+# create config/config.yaml
+mkdir -p $WORKDIR/config
+cat <<EOF > $WORKDIR/config/config.yaml
+project: $DDS_INPUT_PROJECT
+genome: $GENOME
+spike: $SPIKEBED
+inputdir: $INPUT_PROJECT_DIR
+readsuffix: _R1_001.fastq.gz
+mode: $RUN_MODE
+$DATETAB_OPT
+EOF
+echo "Created snakemake $WORKDIR/config/config.yaml file:"
+cat $WORKDIR/config/config.yaml
+echo ""
 
-# send email if user specifies to
-SBATCH_FLAGS="$SBATCH_FLAGS --output=$LOGDIR/ev-pipeline-%j.out"
-if [ ! -z "$EMAIL" ]
+echo "Running escape variants pipeline - logs at $WORKDIR/logs"
+./scripts/run-snakemake.sh
+
+echo "Copying results to $OUTPUT_RESULTS_DIR"
+cp -r $WORKDIR/results/* $OUTPUT_RESULTS_DIR/.
+cp -r $WORKDIR/logs $OUTPUT_RESULTS_DIR/logs
+
+if [ "$UPLOAD_RESULTS" == "Y" ]
 then
-   echo "Emailing $EMAIL on pipeline completion."
-   SBATCH_FLAGS="$SBATCH_FLAGS --mail-type=END --mail-user=$EMAIL"
+    ## upload results to DDS
+    export PROJECT=${DDS_INPUT_PROJECT}_results
+    export SOURCE="$OUTPUT_RESULTS_DIR/*"
+    echo "Uploading $DESTINATION to $PROJECT"
+    bash --wait scripts/dds-upload.sh
+    echo ""
 fi
 
-# run pipeline
-JOBID=$(sbatch --parsable ${SBATCH_FLAGS} scripts/escape-variants-pipeline.sh)
-echo "Submitted batch job $JOBID"
-echo "To monitor main log run:"
-echo "tail -f $LOGDIR/ev-pipeline-$JOBID.out"
+if [ "$CLEANUP_WORKDIR" == "Y" ]
+then
+    echo "Deleting $WORKDIR"
+    rm -rf $WORKDIR
+fi
+
+echo "Deleting $INPUT_PROJECT_DIR"
+rm -rf $INPUT_PROJECT_DIR
+
+echo "DDS Escape Variants Done"
+

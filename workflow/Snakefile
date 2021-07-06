@@ -1,6 +1,9 @@
 configfile: "config/config.yaml"
 
-SAMPLES, = glob_wildcards(config["inputdir"] + "{sample}_R1_001.fastq.gz")
+FASTQFNAMES, = glob_wildcards(config["inputdir"] + "{fastqfname}.fastq.gz")
+if not FASTQFNAMES:
+    raise ValueError("ERROR: No *.fastq.gz files found in {}.".format(config["inputdir"]))
+SAMPLES = [fastqfname.split("_")[0] for fastqfname in FASTQFNAMES]
 GENOME_INDEX_FILES = multiext(config["genome"], ".amb", ".ann", ".bwt", ".pac", ".sa", ".fai")
 GENOME_INDEX_FILES.append(config["genome"].replace(".fasta", ".dict"))
 

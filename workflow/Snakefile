@@ -1,35 +1,6 @@
 configfile: "config/config.yaml"
 
-FASTQFNAMES, = glob_wildcards(config["inputdir"] + "{fastqfname}.fastq.gz")
-if not FASTQFNAMES:
-    raise ValueError("ERROR: No *.fastq.gz files found in {}.".format(config["inputdir"]))
-SAMPLES = [fastqfname.split("_")[0] for fastqfname in FASTQFNAMES]
-GENOME_INDEX_FILES = multiext(config["genome"], ".amb", ".ann", ".bwt", ".pac", ".sa", ".fai")
-GENOME_INDEX_FILES.append(config["genome"].replace(".fasta", ".dict"))
-
-# Defines the files to be created by the workflow
-def get_final_output():
-    final_output = []
-    final_output += expand("results/{sample}.gatk.tab", sample=SAMPLES)
-    final_output += expand("results/{sample}.gatk.filt.vcf", sample=SAMPLES)
-    final_output.append("results/coverage.gatk.tab")
-    final_output.append("results/coverage.raw.tab")
-    final_output += expand("results/{sample}.cleaned.fasta", sample=SAMPLES)
-
-    if "datetab" in config:
-        final_output.append("results/" + config["project"] + ".csv")
-        final_output.append("results/" + config["project"] + "_lineages_of_concern.csv")
-        final_output.append("results/supermetadata.tab")
-        final_output.append("results/" + config["project"] + ".fasta")
-        final_output.append("results/results.xlsx")
-
-    if config["mode"] != 'experimental':
-        final_output += expand("results/{sample}.spike.tab", sample=SAMPLES)
-        final_output.append("results/spike_depths.final.tab")
-        final_output += expand("results/{sample}.depth.tab", sample=SAMPLES)
-        final_output.append("results/spike_genotypes.final.tab")
-
-    return final_output
+include: "rules/common.smk"
 
 rule all:
     input:
@@ -66,7 +37,7 @@ rule remove_adapters:
 rule map_bwa_cleaned_libs:
     message: "Map using BWA with the cleaned libraries {input.readfile}."
     input:
-        readfile="{sample}_R1_001_trimmed.fq.gz",
+        readfile="{sample}" + config["readsuffix"] + "_trimmed.fq.gz",
         genome=config["genome"],
         genome_indexes=GENOME_INDEX_FILES, # ensure genome is indexed created before running this step
     output: "{sample}.sam"

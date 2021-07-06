@@ -131,6 +131,7 @@ project: $DDS_INPUT_PROJECT
 genome: $GENOME
 spike: $SPIKEBED
 inputdir: $INPUT_PROJECT_DIR
+readsuffix: _R1_001.fastq.gz
 mode: $RUN_MODE
 $DATETAB_OPT
 EOF

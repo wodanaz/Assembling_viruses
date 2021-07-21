@@ -1,83 +1,100 @@
 #!/usr/bin/env bash
-# Escape Variants
-#
-# Runs escape variants pipeline as an sbatch job
-# Processes *.fastq.gz files using the genome supplied.
-# The genome file must end with the .fasta extension and was previously indexed via ./setup-escape-variants.sh.
+set -e
 
 ShowHelp()
 {
    # Display Help
-   echo "Runs a Slurm pipeline determining escape variants in fastq.gz files."
+   echo "Runs a Slurm pipeline determining escape variants in fastq.gz files, optionally staging data in and out."
    echo
-   echo "usage: $0 -g genome -i inputdir -m mode [-o outdir] [-w workdir] [-l logdir] [-e email] [-p project] [-j numjobs] [-d] [-D datetab]"
+   echo "usage: $0 -g genome -d datadir -i inputproject -m mode -D datetab [-w workdir] [-j numjobs] [-s] [-S] [-k]"
    echo "options:"
-   echo "-g genome    *.fasta genome to use - required"
-   echo "-i inputdir  directory containing *.fastq.gz files to process - required"
-   echo "-m mode      run mode: 'h' (hospital surveillance) or 'c' (campus surveillance ) or 'e' (experimental) - required"
-   echo "-o outdir    directory to hold output files - defaults to current directory"
-   echo "-w workdir   directory that will hold a tempdir - defaults to current directory"
-   echo "-l logdir    directory that will hold sbatch logs - defaults to /logs within outdir"
-   echo "-e email     email address to notify on pipeline completion - defaults to empty(no email sent)"
-   echo "-p project   name of the project (output filenames) - defaults to sars-cov2"
-   echo "-j numjobs   number of array jobs to run in parallel - defaults to 4"
-   echo "-D datetab   date.tab file used to create supermetadata.tab - defaults to skipping the supermetadata step"
-   echo "-d           debug mode - skips deleting the tempdir"
+   echo "-g genome        *.fasta genome to use - required"
+   echo "-d datadir       directory used to hold input and output files - required"
+   echo "-i inputproject  project name to download - required"
+   echo "-m mode          run mode: 'duke' or 'nc_state' - required"
+   echo "-D datetab       date.tab file used to create supermetadata.tab - required"
+   echo "-w workdir       directory that will hold a tempdir - defaults to current directory"
+   echo "-j numjobs       number of array jobs to run in parallel - defaults to 4"
+   echo "-e email         email address to notify on pipeline completion - defaults to empty(no email sent)"
+   echo "-s               skip download input data step"
+   echo "-S               skip upload output data step"
+   echo "-k               keep intermediate data directories"
    echo ""
    echo "NOTE: The input genome must first be indexed by running ./setup-variants-pipeline.sh."
-   echo "NOTE: The inputdir, outdir, logdir, and workdir must be directories shared across the slurm cluster."
+   echo "NOTE: The genome and datadir must be shared across the slurm cluster."
    echo ""
 }
+
+
+###################################
+### Read command line arguments ###
+###################################
+
 
 # set default argument values
 export WORKDIR=$(pwd)
 export OUTDIR=$(pwd)
-export LOGDIR="$OUTDIR/logs"
 export LOGSUFFIX=$$
 export DELETE_EVTMPDIR=Y
-export PROJECTNAME=sars-cov2
+export PROJECTNAME=
 export EVMODE=""
 export DATETAB=""
 export SPIKEBED="spike.bed"
+export MAX_ARRAY_JOBS=10
+export DELETE_EVTMPDIR=Y
+export DOWNLOAD_INPUT_DATA=Y
+export UPLOAD_OUTPUT_DATA=Y
 
-# parse arguments
-while getopts "g:i:m:o:w:l:e:dp:j:D:" OPTION; do
+
+while getopts "g:d:i:m:w:j:D:sSke:" OPTION; do
     case $OPTION in
     g)
         export GENOME=$OPTARG
         ;;
-    i)
-        export INPUTDIR=$OPTARG
+    d)
+        export DATADIR=$(readlink -e $OPTARG)
         ;;
     m)
         export EVMODE=$OPTARG
         ;;
-    o)
-        export OUTDIR=$OPTARG
-        ;;
-    w)
-        export WORKDIR=$OPTARG
-        ;;
-    l)
-        export LOGDIR=$OPTARG
-        ;;
-    e)
-        export EMAIL=$OPTARG
-        ;;
-    p)
+    i)
         export PROJECTNAME=$OPTARG
         ;;
     j)
         export MAX_ARRAY_JOBS=$OPTARG
         ;;
-    d)
-        export DELETE_EVTMPDIR=N
+    w)
+        export WORKDIR=$(readlink -e $OPTARG)
         ;;
     D)
         export DATETAB=$OPTARG
         ;;
+    e)
+        EMAIL=$OPTARG
+        ;;
+    k)
+        export DELETE_EVTMPDIR=N
+        ;;
+    s)
+        export DOWNLOAD_INPUT_DATA=N
+        ;;
+    S)
+        export UPLOAD_OUTPUT_DATA=N
+        ;;
     esac
 done
+
+####################################
+### Check command line arguments ###
+####################################
+
+# declare directory names
+INPUT_DATADIR=$DATADIR/input
+export INPUTDIR=$INPUT_DATADIR/$PROJECTNAME
+OUTPUT_DATADIR=$DATADIR/output
+export OUTDIR=$OUTPUT_DATADIR/$PROJECTNAME
+export LOGDIR="$OUTDIR/logs"
+
 
 # check required arguments
 if [ -z "$GENOME" ]
@@ -87,17 +104,32 @@ then
    ShowHelp
    exit 1
 fi
-if [ -z "INPUTDIR" ]
+if [ -z "$DATADIR" ]
 then
-   echo "ERROR: Missing required '-i inputdir' argument."
+   echo "ERROR: Missing required '-d datadir' argument."
    echo ""
    ShowHelp
    exit 1
 fi
-# make sure mode is "h", "c" or "e"
-if [[ "$EVMODE" != "h" && "$EVMODE" != "c" && "$EVMODE" != "e" ]]
+if [ -z "$PROJECTNAME" ]
 then
-   echo "ERROR: Required '-m mode' argument must be 'h', 'c' or 'e'."
+   echo "ERROR: Missing required '-i inputproject' argument."
+   echo ""
+   ShowHelp
+   exit 1
+fi
+
+if [[ "$EVMODE" != "duke" && "$EVMODE" != "nc_state" ]]
+then
+   echo "ERROR: Required '-m mode' argument must be 'duke' or 'nc_state'."
+   echo ""
+   ShowHelp
+   exit 1
+fi
+
+if [ -z "$DATETAB" ]
+then
+   echo "ERROR: Missing required '-D datetab' argument."
    echo ""
    ShowHelp
    exit 1
@@ -114,7 +146,6 @@ then
     exit 1
 fi
 
-
 # check that the config.sh has been setup
 if [ -f config.sh ]
 then
@@ -127,19 +158,32 @@ else
    exit 1
 fi
 
-# create logs directory to hold slurm logs (this directory must exist before sbatch can run)
+##########################
+### Create directories ###
+##########################
+
+# Create directories
+# make base input directory if necessary
+mkdir -p $INPUT_DATADIR
+# make base output directory if necessary
+mkdir -p $OUTPUT_DATADIR
+# make output results directory if necessary
+mkdir -p $OUTDIR
+# make output logs directory if necessary
 mkdir -p $LOGDIR
 
-# send email if user specifies to
-SBATCH_FLAGS="$SBATCH_FLAGS --output=$LOGDIR/ev-pipeline-%j.out"
+###########################
+### Run Escape Variants ###
+###########################
+
+SBATCH_FLAGS="$SBATCH_FLAGS --output=$LOGDIR/run-staging-pipeline-%j.out"
 if [ ! -z "$EMAIL" ]
 then
    echo "Emailing $EMAIL on pipeline completion."
    SBATCH_FLAGS="$SBATCH_FLAGS --mail-type=END --mail-user=$EMAIL"
 fi
 
-# run pipeline
-JOBID=$(sbatch --parsable ${SBATCH_FLAGS} scripts/escape-variants-pipeline.sh)
+JOBID=$(sbatch --parsable ${SBATCH_FLAGS} scripts/run-staging-pipeline.sh)
 echo "Submitted batch job $JOBID"
 echo "To monitor main log run:"
-echo "tail -f $LOGDIR/ev-pipeline-$JOBID.out"
+echo "tail -f $LOGDIR/run-staging-pipeline-$JOBID.out"

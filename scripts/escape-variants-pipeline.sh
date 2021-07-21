@@ -39,6 +39,8 @@ export EVDIR=$(mktemp -d --tmpdir=$WORKDIR)
 echo "Running using directory $EVDIR"
 echo ""
 
+echo "Saving environment"
+conda env export > $LOGDIR/environment.yml
 
 echo "Exported Environment Variables"
 echo "    export EVDIR=$EVDIR"
@@ -48,7 +50,6 @@ echo "    export INPUTDIR=$INPUTDIR"
 echo "    export PROJECTNAME=$PROJECTNAME"
 echo "    export DATETAB=$DATETAB"
 echo ""
-
 
 echo "Step 1 - Remove Nextera Adapters"
 # create the list of input fastq.gz filenames to process
@@ -188,27 +189,22 @@ echo "GATK Step 10b - Done"
 echo ""
 
 
-if [ "$EVMODE" == "e" ]
-then
-    echo "Skipping GATK Step 11 since running in surveillance mode."
-else
-    echo "GATK Step 11a - intersect vcf files with spike.bed"
-    ls $EVDIR/*gatk.filt.vcf > $EVDIR/filt-vcfs.list
-    ./scripts/sbatch-array.sh \
-        ./scripts/intersect-spike.sh $EVDIR/filt-vcfs.list
-    echo "GATK Step 11a - Done"
+echo "GATK Step 11a - intersect vcf files with spike.bed"
+ls $EVDIR/*gatk.filt.vcf > $EVDIR/filt-vcfs.list
+./scripts/sbatch-array.sh \
+    ./scripts/intersect-spike.sh $EVDIR/filt-vcfs.list
+echo "GATK Step 11a - Done"
 
-    echo "GATK Step 11b - run genotype compiler on spike filtered data"
-    sbatch --wait "--output=${LOGDIR}/run-spike-genotype-compiler-%j.out" \
-        ./scripts/run-spike-genotype-compiler.sh
-    echo "GATK Step 11b - Done"
+echo "GATK Step 11b - run genotype compiler on spike filtered data"
+sbatch --wait "--output=${LOGDIR}/run-spike-genotype-compiler-%j.out" \
+    ./scripts/run-spike-genotype-compiler.sh
+echo "GATK Step 11b - Done"
 
-    echo "GATK Step 11c - run depth compiler on spike filtered data"
-    sbatch --wait "--output=${LOGDIR}/run-spike-depth-compiler-%j.out" \
-        ./scripts/run-spike-depth-compiler.sh
-    echo "GATK Step 11c - Done"
-    echo ""
-fi
+echo "GATK Step 11c - run depth compiler on spike filtered data"
+sbatch --wait "--output=${LOGDIR}/run-spike-depth-compiler-%j.out" \
+    ./scripts/run-spike-depth-compiler.sh
+echo "GATK Step 11c - Done"
+echo ""
 
 
 echo "Pangolin Step 1"
@@ -220,45 +216,19 @@ echo "Pangolin Step 1 - Done"
 echo ""
 
 
-# determine if we should run the supermetadata step
-SUPERMETADATA="N"
-if [ -n "$DATETAB" ]
-then
-    REQUIREDFILE=""
-    if [ "$EVMODE" == "c" ]
-    then
-        REQUIREDFILE=$EVDIR/$PROJECTNAME.csv
-    fi
-    if [ "$EVMODE" == "h" ]
-    then
-        REQUIREDFILE=$EVDIR/${PROJECTNAME}_lineages_of_concern.csv
-    fi
-    if [ -s "$REQUIREDFILE" ]
-    then
-        SUPERMETADATA="Y"
-    else
-        echo "Skipping mode $EVMODE supermetadata step because of empty $REQUIREDFILE"
-    fi
-fi
+echo "Supermetadata Step 1 - using $DATETAB with mode $EVMODE"
+echo "Running:"
+echo "    ./scripts/supermetadata-modify-titles.sh"
+sbatch --wait "--output=${LOGDIR}/supermetadata-modify-titles-%j.out" \
+    ./scripts/supermetadata-modify-titles.sh
+echo "Supermetadata Step 1 - DONE"
+echo ""
 
-if [ "$SUPERMETADATA" == "Y" ]
-then
-    echo "Supermetadata Step 1 - using $DATETAB with mode $EVMODE"
-    echo "Running:"
-    echo "    ./scripts/supermetadata-modify-titles.sh"
-    sbatch --wait "--output=${LOGDIR}/supermetadata-modify-titles-%j.out" \
-        ./scripts/supermetadata-modify-titles.sh
-    echo "Supermetadata Step 1 - DONE"
-    echo ""
-
-    echo "Supermetadata Step 2 - create spreadsheet"
-    sbatch --wait "--output=${LOGDIR}/create-spreadsheet-%j.out" \
-        ./scripts/create-spreadsheet.py
-    echo "Supermetadata Step 2 - Done"
-    echo ""
-else
-    echo "Skipping Supermetadata Step - DATETAB=$DATETAB EVMODE=$EVMODE"
-fi
+echo "Supermetadata Step 2 - create spreadsheet"
+sbatch --wait "--output=${LOGDIR}/create-spreadsheet-%j.out" \
+    ./scripts/create-spreadsheet.py
+echo "Supermetadata Step 2 - Done"
+echo ""
 
 
 echo "Copying output files to $OUTDIR"
@@ -278,28 +248,16 @@ else
    echo "NOTE: The $EVDIR/${PROJECTNAME}.csv file was empty."
 fi
 
-if [ -s "$EVDIR/${PROJECTNAME}_lineages_of_concern.csv" ]
-then
-   cp "$EVDIR/${PROJECTNAME}_lineages_of_concern.csv" $OUTDIR/.
-else
-   echo "NOTE: The $EVDIR/${PROJECTNAME}_lineages_of_concern.csv file was empty."
-fi
-
 # when not in surveillance save GATK Step 11 files
-if [ "$EVMODE" != "e" ]
-then
-   cp $EVDIR/*.spike.tab $OUTDIR/.
-   cp $EVDIR/spike_genotypes.final.tab $OUTDIR/.
-   cp $EVDIR/*.depth.tab $OUTDIR/.
-   cp $EVDIR/spike_depths.final.tab $OUTDIR/.
-fi
 
-if [ "$SUPERMETADATA" == "Y" ]
-then
-  cp $EVDIR/supermetadata.tab $OUTDIR/.
-  cp $EVDIR/${PROJECTNAME}.fasta $OUTDIR/.
-  cp $EVDIR/results.xlsx $OUTDIR/.
-fi
+cp $EVDIR/*.spike.tab $OUTDIR/.
+cp $EVDIR/spike_genotypes.final.tab $OUTDIR/.
+cp $EVDIR/*.depth.tab $OUTDIR/.
+cp $EVDIR/spike_depths.final.tab $OUTDIR/.
+
+cp $EVDIR/supermetadata.tab $OUTDIR/.
+cp $EVDIR/${PROJECTNAME}.fasta $OUTDIR/.
+cp $EVDIR/results.xlsx $OUTDIR/.
 
 if [ "$DELETE_EVTMPDIR" == "Y" ]
     then

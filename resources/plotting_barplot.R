@@ -7,6 +7,7 @@ library(tidyr)
 
 #### Plotting weekly data
 
+Hospital_data <- read.delim("DUKE_CMB_consolidated_monthly_results_updated_7_19_2021_cleaned.txt")
 
 head(Hospital_data)
 dim(Hospital_data)
@@ -122,15 +123,9 @@ ggplot(Duke_CMB_totals, aes(x= Week, fill = pango_tab, y = n)) + scale_fill_manu
   xlab("Week of Collection") + ylab( "Percentage of Variants per Week") + guides(fill=guide_legend(title="Lineage"))
   
   
+########################
+## plotting monthly data
   
-  ########
-  ## plotting monthly data
-  
-  Hospital_month_data <- read.delim("DUKE_CMB_consolidated_monthly_results_updated_6_23_2021_cleaned.txt")
-
-
-#Hospital_data <- read.delim("DUKE_CMB_consolidated_monthly_results_updated_6_29_2021_cleaned.txt")
-
 head(Hospital_data)
 dim(Hospital_data)
 summary(Hospital_data)

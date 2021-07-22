@@ -7,7 +7,6 @@ library(tidyr)
 
 #### Plotting weekly data
 
-Hospital_data <- read.delim("DUKE_CMB_consolidated_monthly_results_updated_7_19_2021_cleaned.txt")
 
 head(Hospital_data)
 dim(Hospital_data)

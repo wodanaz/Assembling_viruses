@@ -146,6 +146,20 @@ then
     exit 1
 fi
 
+# check that there are no duplicate sample names in the input fastq files
+BADSAMPLES=$(basename $INPUTDIR/*.fastq.gz | sed -e 's/_.*//' | uniq -d)
+if [ "$BADSAMPLES" ]
+then
+   echo "Warning: Found duplicate sample names!"
+   DUPDIR="${INPUTDIR}_dups"
+   mkdir -p $DUPDIR
+   for BADSAMPLE in $BADSAMPLES
+   do
+       echo "Moving $BADSAMPLE to $DUPDIR."
+       mv $INPUTDIR/${BADSAMPLE}*.fastq.gz $DUPDIR/.
+   done
+fi
+
 # check that the config.sh has been setup
 if [ -f config.sh ]
 then

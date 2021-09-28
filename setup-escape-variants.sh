@@ -26,13 +26,14 @@ echo "Setup for escape-variants-pipeline - Starting"
 
 echo "Activating 'escapevariants' conda environment"
 
-# set default value for ANACONDAMODULE to "Anaconda3/2019.10-gcb02"
-ANACONDAMODULE="${ANACONDAMODULE-Anaconda3/2019.10-gcb02}"
-
-# Load the Anaconda module if not empty
-if [ ! -z "$ANACONDAMODULE" ]
+if [ "$USE_MODULES" == "Y" ]
 then
-    module load $ANACONDAMODULE
+  # set default value for ANACONDAMODULE to "Anaconda3/2019.10-gcb02"
+   ANACONDAMODULE="${ANACONDAMODULE-Anaconda3/2019.10-gcb02}"
+   module load $ANACONDAMODULE
+else
+  # make sure conda is setup within this script
+  source $CONDA_PREFIX/etc/profile.d/conda.sh
 fi
 
 conda activate escapevariants

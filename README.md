@@ -29,6 +29,13 @@ The config.sh file can be created by copying the example file in place.
 cp example-config.sh config.sh
 ```
 
+#### Disabling environment modules
+The pipeline can be run without using environment modules by updating config.sh as follows:
+```
+export USE_MODULES=N
+```
+When this is set conda will assumed to be in the PATH.
+
 ### HARDAC Installation Instructions
 On HARDAC the Anaconda3 module provides the conda command.
 From an interactive session you can use the Anaconda3 module to create the `escapevariants` conda environment by running:
@@ -41,6 +48,13 @@ conda env create -f environment.yml
 Using an Anaconda or Miniconda installallation create the `escapevariants` conda environment by running:
 ```
 conda env create -f environment.yml
+```
+
+
+#### Staging data without modules
+For staging data using ddsclient when running with modules disabled an environment named "dds" must be created using:
+```
+conda env create -f dds-environment.yml
 ```
 
 ## Setup

@@ -13,5 +13,13 @@ then
    exit 1
 fi
 
-module load ddsclient/3.2.0-gcb01
+if [ "$USE_MODULES" == "Y" ]
+then
+    module load ddsclient/3.2.0-gcb01
+else
+    # make sure conda is setup within this script
+    source $CONDA_PREFIX/etc/profile.d/conda.sh
+    conda activate dds
+fi
+
 ddsclient upload -p $PROJECT $SOURCE/*

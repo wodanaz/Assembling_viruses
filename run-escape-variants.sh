@@ -172,6 +172,12 @@ else
    exit 1
 fi
 
+# enable USE_MODULES if not explicitly turned off by config.sh
+if [ "$USE_MODULES" != "N" ]
+then
+   export USE_MODULES=Y
+fi
+
 ##########################
 ### Create directories ###
 ##########################

@@ -1,21 +1,13 @@
 #!/bin/bash
 # Make final consensus fasta sequence using the SNPs in the vcf file - Array Job
-#
-#SBATCH --job-name=ev-concensus-merge
-#
-# Required First Argument: file containing a list of *depth.bed files to process
-# Required Environment Variables:
-#  EVDIR - working directory
-#  SLURM_ARRAY_TASK_ID - number specifying which file in $1 (FILENAMES_FILE) to process
+# Required positional arguments:
+# - bed file to process
 
 # stop if a command fails (non-zero exit status)
 set -e
 
-# The first argument is a file containing filenames to process
-FILENAMES_FILE=$1
-# Determine the file to process in $FILENAMES_FILE based on SLURM_ARRAY_TASK_ID
-BEDFILE=$(awk NR==$SLURM_ARRAY_TASK_ID $FILENAMES_FILE)
+BEDFILE=$1
 
 root=`basename $BEDFILE .depth.bed`
 
-awk '{ if ( $3 < 5 )  print $1 "\t" $2 "\t" $2 + 1 }' ${BEDFILE} | bedtools merge |  awk '{ print $1 "\t" $2 "\t" $3 - 1  }' > $EVDIR/$root.merged.bed
+awk '{ if ( $3 < 5 )  print $1 "\t" $2 "\t" $2 + 1 }' ${BEDFILE} | bedtools merge |  awk '{ print $1 "\t" $2 "\t" $3 - 1  }' > $root.merged.bed

@@ -1,5 +1,7 @@
+name: pangolin
 channels:
   - bioconda
   - conda-forge
 dependencies:
-  - picard=2.25.0
+  - pangolin
+  - snakemake=6.4.1

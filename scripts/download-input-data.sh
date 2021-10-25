@@ -15,7 +15,7 @@ fi
 
 if [ "$USE_MODULES" == "Y" ]
 then
-    module load ddsclient/3.2.0-gcb01
+    module load ddsclient/3.3.0-gcb01
 else
     # make sure conda is setup within this script
     source $CONDA_PREFIX/etc/profile.d/conda.sh

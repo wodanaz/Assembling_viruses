@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 # Create a dictionary file for using picard tools
-# Expects GENOME environment variable to contain a path to the genome to index.
-#
-#SBATCH --job-name=ev-dict
+# Required positional arguments:
+# - genome file to create a picard dictionary for
+# - path to create dictionary at
 
 # stop if a command fails (non-zero exit status)
 set -e
 
-GENOME_BASE_NAME=$(basename $GENOME .fasta)
-GENOME_DICTIONARY="$GENOME_BASE_NAME.dict"
+GENOME=$1
+GENOME_DICTIONARY=$2
 
 picard CreateSequenceDictionary R=$GENOME O=$GENOME_DICTIONARY
-samtools faidx $GENOME

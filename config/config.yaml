@@ -1,0 +1,5 @@
+project: assembledVirus
+genome: resources/NC_045512.fasta
+spike: resources/spike.bed
+inputdir: "."
+readsuffix: _R1_001

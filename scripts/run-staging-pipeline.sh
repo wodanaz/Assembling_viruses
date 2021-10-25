@@ -14,29 +14,53 @@
 set -e
 
 echo "Escape Variants Starting"
+date
 echo ""
+
 
 if [ "$DOWNLOAD_INPUT_DATA" == "Y" ]
 then
     # download project from DDS
     echo "Downloading input data to $INPUTDIR"
-    srun --output="${LOGDIR}/download-input-data-%j.out" scripts/download-input-data.sh $INPUTDIR $PROJECTNAME
+    if [ "$FOREGROUND_MODE" = "Y" ]
+    then
+        bash scripts/download-input-data.sh $INPUTDIR $PROJECTNAME
+    else
+        srun --output="${LOGDIR}/download-input-data-%j.out" scripts/download-input-data.sh $INPUTDIR $PROJECTNAME
+    fi
     echo ""
 fi
 
-echo "Running escape variants pipeline - logs at $LOGDIR"
-srun --output="${LOGDIR}/escape-variants-pipeline-%j.out" scripts/escape-variants-pipeline.sh
+echo "Running escape variants pipeline"
+date
+./scripts/escape-variants-pipeline.sh 2>&1
+echo ""
+
+echo "Running escape variants pipeline - DONE"
+date
 echo ""
 
 if [ "$UPLOAD_OUTPUT_DATA" == "Y" ]
 then
     # upload results to DDS
     echo "Uploading results from $OUTDIR"
-    srun --output="${LOGDIR}/upload-output-data-%j.out" scripts/upload-output-data.sh $OUTDIR ${PROJECTNAME}_results
+    if [ "$FOREGROUND_MODE" = "Y" ]
+    then
+        bash scripts/upload-output-data.sh $OUTDIR ${PROJECTNAME}_results
+    else
+        srun --output="${LOGDIR}/upload-output-data-%j.out" scripts/upload-output-data.sh $OUTDIR ${PROJECTNAME}_results
+    fi
     echo ""
 fi
 
-echo "Deleting $INPUTDIR"
-rm -rf $INPUTDIR
+if [ "$DELETE_INT_DIRS" == "Y" ]
+    then
+    echo "Deleting temporary $SNAKEMAKE_DIR directory"
+    rm -rf $SNAKEMAKE_DIR
+
+    echo "Deleting $INPUTDIR"
+    rm -rf $INPUTDIR
+fi
+
 
 echo "Escape Variants Done"

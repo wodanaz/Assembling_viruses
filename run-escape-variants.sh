@@ -6,21 +6,18 @@ ShowHelp()
    # Display Help
    echo "Runs a Slurm pipeline determining escape variants in fastq.gz files, optionally staging data in and out."
    echo
-   echo "usage: $0 -g genome -d datadir -i inputproject -m mode -D datetab [-w workdir] [-j numjobs] [-s] [-S] [-k]"
+   echo "usage: $0 -d datadir -i inputproject [-g genome] [-j numjobs] [-e email] [-s] [-S] [-k] [-r readsuffix]"
    echo "options:"
-   echo "-g genome        *.fasta genome to use - required"
    echo "-d datadir       directory used to hold input and output files - required"
    echo "-i inputproject  project name to download - required"
-   echo "-m mode          run mode: 'duke' or 'nc_state' - required"
-   echo "-D datetab       date.tab file used to create supermetadata.tab - required"
-   echo "-w workdir       directory that will hold a tempdir - defaults to current directory"
-   echo "-j numjobs       number of array jobs to run in parallel - defaults to 4"
+   echo "-g genome        *.fasta genome to use - defaults to resources/NC_045512.fasta"
+   echo "-j numjobs       number of array jobs to run in parallel - defaults to 10"
    echo "-e email         email address to notify on pipeline completion - defaults to empty(no email sent)"
    echo "-s               skip download input data step"
    echo "-S               skip upload output data step"
-   echo "-k               keep intermediate data directories"
+   echo "-k               keep input/intermediate data directories"
+   echo "-r readsuffix    Read suffix - defaults to _R1_001"
    echo ""
-   echo "NOTE: The input genome must first be indexed by running ./setup-variants-pipeline.sh."
    echo "NOTE: The genome and datadir must be shared across the slurm cluster."
    echo ""
 }
@@ -32,54 +29,46 @@ ShowHelp()
 
 
 # set default argument values
-export WORKDIR=$(pwd)
+export GENOME=$(readlink -e resources/NC_045512.fasta)
 export OUTDIR=$(pwd)
-export LOGSUFFIX=$$
-export DELETE_EVTMPDIR=Y
+export DELETE_INT_DIRS=Y
 export PROJECTNAME=
-export EVMODE=""
-export DATETAB=""
-export SPIKEBED="spike.bed"
-export MAX_ARRAY_JOBS=10
-export DELETE_EVTMPDIR=Y
+export SPIKEBED=$(readlink -e resources/spike.bed)
+export NUM_CORES=10
+export SNAKEMAKE_PROFILE=$(readlink -e slurm/)
 export DOWNLOAD_INPUT_DATA=Y
 export UPLOAD_OUTPUT_DATA=Y
+export READ_SUFFIX=_R1_001
+export FOREGROUND_MODE=N
 
-
-while getopts "g:d:i:m:w:j:D:sSke:" OPTION; do
+while getopts "g:d:i:m:w:j:D:sSke:r:" OPTION; do
     case $OPTION in
     g)
-        export GENOME=$OPTARG
+        export GENOME=$(readlink -e $OPTARG)
         ;;
     d)
         export DATADIR=$(readlink -e $OPTARG)
-        ;;
-    m)
-        export EVMODE=$OPTARG
         ;;
     i)
         export PROJECTNAME=$OPTARG
         ;;
     j)
-        export MAX_ARRAY_JOBS=$OPTARG
-        ;;
-    w)
-        export WORKDIR=$(readlink -e $OPTARG)
-        ;;
-    D)
-        export DATETAB=$OPTARG
+        export NUM_CORES=$OPTARG
         ;;
     e)
         EMAIL=$OPTARG
         ;;
     k)
-        export DELETE_EVTMPDIR=N
+        export DELETE_INT_DIRS=N
         ;;
     s)
         export DOWNLOAD_INPUT_DATA=N
         ;;
     S)
         export UPLOAD_OUTPUT_DATA=N
+        ;;
+    r)
+        export READ_SUFFIX=$OPTARG
         ;;
     esac
 done
@@ -93,8 +82,9 @@ INPUT_DATADIR=$DATADIR/input
 export INPUTDIR=$INPUT_DATADIR/$PROJECTNAME
 OUTPUT_DATADIR=$DATADIR/output
 export OUTDIR=$OUTPUT_DATADIR/$PROJECTNAME
-export LOGDIR="$OUTDIR/logs"
-
+export SNAKEMAKE_DIR=${OUTDIR}_snakemake
+export LOGDIR="$SNAKEMAKE_DIR/logs"
+export SM_CONDA_PREFIX=$DATADIR/conda
 
 # check required arguments
 if [ -z "$GENOME" ]
@@ -117,47 +107,6 @@ then
    echo ""
    ShowHelp
    exit 1
-fi
-
-if [[ "$EVMODE" != "duke" && "$EVMODE" != "nc_state" ]]
-then
-   echo "ERROR: Required '-m mode' argument must be 'duke' or 'nc_state'."
-   echo ""
-   ShowHelp
-   exit 1
-fi
-
-if [ -z "$DATETAB" ]
-then
-   echo "ERROR: Missing required '-D datetab' argument."
-   echo ""
-   ShowHelp
-   exit 1
-fi
-
-# check that the genome dictionary has been created by ./setup-escape-variants.sh
-GENOME_BASE_NAME=$(basename $GENOME .fasta)
-GENOME_DICTIONARY="$GENOME_BASE_NAME.dict"
-if [[ ! -f "$GENOME_DICTIONARY" ]]
-then
-    echo "ERROR: Genome dictionary file $GENOME_DICTIONARY not found."
-    echo "To fix run ./setup-escape-variants.sh -g $GENOME"
-    echo ""
-    exit 1
-fi
-
-# check that there are no duplicate sample names in the input fastq files
-BADSAMPLES=$(basename $INPUTDIR/*.fastq.gz | sed -e 's/_.*//' | uniq -d)
-if [ "$BADSAMPLES" ]
-then
-   echo "Warning: Found duplicate sample names!"
-   DUPDIR="${INPUTDIR}_dups"
-   mkdir -p $DUPDIR
-   for BADSAMPLE in $BADSAMPLES
-   do
-       echo "Moving $BADSAMPLE to $DUPDIR."
-       mv $INPUTDIR/${BADSAMPLE}*.fastq.gz $DUPDIR/.
-   done
 fi
 
 # check that the config.sh has been setup
@@ -189,6 +138,12 @@ mkdir -p $INPUT_DATADIR
 mkdir -p $OUTPUT_DATADIR
 # make output results directory if necessary
 mkdir -p $OUTDIR
+# create temp snakemake working directory <datadir>/output/<projectname>_snakemake
+mkdir -p $SNAKEMAKE_DIR
+
+# create directory to hold conda environments if necessary
+mkdir -p $SM_CONDA_PREFIX
+
 # make output logs directory if necessary
 mkdir -p $LOGDIR
 
@@ -203,7 +158,13 @@ then
    SBATCH_FLAGS="$SBATCH_FLAGS --mail-type=END --mail-user=$EMAIL"
 fi
 
-JOBID=$(sbatch --parsable ${SBATCH_FLAGS} scripts/run-staging-pipeline.sh)
-echo "Submitted batch job $JOBID"
-echo "To monitor main log run:"
-echo "tail -f $LOGDIR/run-staging-pipeline-$JOBID.out"
+if [ "$FOREGROUND_MODE" = "Y" ]
+then
+   bash scripts/run-staging-pipeline.sh | tee $LOGDIR/run-staging-pipeline.out
+else
+   JOBID=$(sbatch --parsable ${SBATCH_FLAGS} scripts/run-staging-pipeline.sh)
+   echo "Submitted batch job $JOBID"
+   echo "To monitor main log run:"
+   echo "tail -f $LOGDIR/run-staging-pipeline-$JOBID.out"
+fi
+

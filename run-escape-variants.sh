@@ -127,7 +127,6 @@ then
    export USE_MODULES=Y
 fi
 
-
 ##########################
 ### Create directories ###
 ##########################

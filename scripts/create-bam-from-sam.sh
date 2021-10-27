@@ -7,8 +7,7 @@
 set -e
 
 SAMFILE=$1
+OUTFILE=$2
 
-root=`basename $SAMFILE .sam`;
-
-samtools view -Sb $SAMFILE | samtools sort - > $root.bam
-samtools index $root.bam
+samtools view -Sb $SAMFILE | samtools sort - > $OUTFILE
+samtools index $OUTFILE

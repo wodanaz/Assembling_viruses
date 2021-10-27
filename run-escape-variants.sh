@@ -6,7 +6,7 @@ ShowHelp()
    # Display Help
    echo "Runs a Slurm pipeline determining escape variants in fastq.gz files, optionally staging data in and out."
    echo
-   echo "usage: $0 -d datadir -i inputproject [-g genome] [-j numjobs] [-e email] [-s] [-S] [-k] [-r readsuffix]"
+   echo "usage: $0 -d datadir -i inputproject [-g genome] [-j numjobs] [-e email] [-s] [-S] [-k]"
    echo "options:"
    echo "-d datadir       directory used to hold input and output files - required"
    echo "-i inputproject  project name to download - required"
@@ -16,7 +16,6 @@ ShowHelp()
    echo "-s               skip download input data step"
    echo "-S               skip upload output data step"
    echo "-k               keep input/intermediate data directories"
-   echo "-r readsuffix    Read suffix - defaults to _R1_001"
    echo ""
    echo "NOTE: The genome and datadir must be shared across the slurm cluster."
    echo ""
@@ -38,10 +37,9 @@ export NUM_CORES=10
 export SNAKEMAKE_PROFILE=$(readlink -e slurm/)
 export DOWNLOAD_INPUT_DATA=Y
 export UPLOAD_OUTPUT_DATA=Y
-export READ_SUFFIX=_R1_001
 export FOREGROUND_MODE=N
 
-while getopts "g:d:i:m:w:j:D:sSke:r:" OPTION; do
+while getopts "g:d:i:m:w:j:D:sSke:" OPTION; do
     case $OPTION in
     g)
         export GENOME=$(readlink -e $OPTARG)
@@ -66,9 +64,6 @@ while getopts "g:d:i:m:w:j:D:sSke:r:" OPTION; do
         ;;
     S)
         export UPLOAD_OUTPUT_DATA=N
-        ;;
-    r)
-        export READ_SUFFIX=$OPTARG
         ;;
     esac
 done

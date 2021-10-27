@@ -1,9 +1,16 @@
-# find sample names based on config file inputdir and readsuffix
-READ_EXT = ".fastq.gz"
-SAMPLES, = glob_wildcards(config["inputdir"] + "/{fastqfname}" + config["readsuffix"] + READ_EXT)
+import os
+import glob
+
+# create dictionary of sample name to filename
+SAMPLE_TO_FILENAME = dict()
+# find FASTQ files based on config file inputdir
+for sample_path in glob.glob(config["inputdir"] + "/*.fastq.gz"):
+    # sample name is the beginning of the filename before the first "_"
+    sample_name = os.path.basename(sample_path).split("_")[0]
+    SAMPLE_TO_FILENAME[sample_name] = sample_path
+SAMPLES = SAMPLE_TO_FILENAME.keys()
 if not SAMPLES:
-    raise ValueError(
-        "ERROR: No samples files found in {} with suffix {}.".format(config["inputdir"], config["readsuffix"] + READ_EXT))
+    raise ValueError( "ERROR: No samples files found in {}.".format(config["inputdir"]))
 
 # determine genome index filenames
 GENOME_INDEX_FILES = multiext(config["genome"], ".amb", ".ann", ".bwt", ".pac", ".sa", ".fai")
@@ -23,4 +30,3 @@ def get_final_output():
     final_output.append("results/spike_genotypes.final.tab")
     final_output.append("results/" + config["project"] + ".csv")
     return final_output
-

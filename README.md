@@ -110,7 +110,6 @@ Configuration options:
 - __genome__ - File path to a genome FASTA file used in the pipeline. Default value `resources/NC_045512.fasta`.
 - __spike__ -  File path to a bed file containing the spike region. Default value `resources/spike.bed`.
 - __inputdir__ - directory containing input fastq.gz sequences to process. Default value `""` (the base directory of this repo).
-- __readsuffix__ - Suffix of input fastq.gz files that is removed to determine sample name. Defaults to `_R1_001`.
 If __inputdir__ is changed to a path other than `""` the genome, spike, datetab should be set to absolute paths.
 Otherwise the workflow will not be able to find these files.
 

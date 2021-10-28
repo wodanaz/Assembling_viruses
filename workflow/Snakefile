@@ -26,18 +26,18 @@ rule create_picard_dictionary:
 
 rule remove_adapters:
     message: "Remove Nextera Adapters {input}."
-    input: config["inputdir"] + "/{prefix}.fastq.gz"
+    input: lambda wildcards: SAMPLE_TO_FILENAME[wildcards.prefix]
     output: "{prefix}_trimmed.fq.gz"
     conda: "envs/environment.yml"
     log: "logs/remove_adapters/{prefix}.log"
     params:
          script=srcdir("../scripts/remove-nextera-adapters.sh")
-    shell: "{params.script} {input} &>{log}"
+    shell: "{params.script} {input} {output} &>{log}"
 
 rule map_bwa_cleaned_libs:
     message: "Map using BWA with the cleaned libraries {input.readfile}."
     input:
-        readfile="{sample}" + config["readsuffix"] + "_trimmed.fq.gz",
+        readfile="{sample}_trimmed.fq.gz",
         genome=config["genome"],
         genome_indexes=GENOME_INDEX_FILES, # ensure genome is indexed created before running this step
     output: "{sample}.sam"
@@ -50,18 +50,18 @@ rule map_bwa_cleaned_libs:
 rule create_bam_from_sam:
     message: "Create BAM from SAM and make an index {input}."
     input: "{sample}.sam"
-    output: "{sample}.bam"
+    output: "create_bam_from_sam/{sample}.bam"
     conda: "envs/environment.yml"
     log: "logs/create_bam_from_sam/{sample}.log"
     resources:
         mem_mb=1000
     params:
         script=srcdir("../scripts/create-bam-from-sam.sh")
-    shell: "{params.script} {input} &>{log}"
+    shell: "{params.script} {input} {output} &>{log}"
 
 rule mark_duplicates:
     message: "'Deduplicate' or mark PCR duplicates {input}."
-    input: "{sample}.bam"
+    input: "create_bam_from_sam/{sample}.bam"
     output:
         bam="{sample}.dedup.bam",
         metrics="{sample}.metric.txt",
@@ -171,7 +171,7 @@ rule run_depth_coverage:
 
 rule create_coverage_table:
     message: "Make a table with coverage information {input}."
-    input: expand("{sample}.bam", sample=SAMPLES)
+    input: expand("create_bam_from_sam/{sample}.bam", sample=SAMPLES)
     output: "results/coverage.raw.tab"
     conda: "envs/environment.yml"
     log: "logs/create_coverage_table.log"

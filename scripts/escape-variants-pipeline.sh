@@ -27,7 +27,6 @@ project: $PROJECTNAME
 genome: $GENOME
 spike: $SPIKEBED
 inputdir: $INPUTDIR
-readsuffix: $READ_SUFFIX
 EOF
 echo "Created snakemake $SNAKEMAKE_DIR/config/config.yaml file:"
 cat $SNAKEMAKE_DIR/config/config.yaml

@@ -79,7 +79,12 @@ OUTPUT_DATADIR=$DATADIR/output
 export OUTDIR=$OUTPUT_DATADIR/$PROJECTNAME
 export SNAKEMAKE_DIR=${OUTDIR}_snakemake
 export LOGDIR="$SNAKEMAKE_DIR/logs"
-export SM_CONDA_PREFIX=$DATADIR/conda
+
+# set snakemake conda directory if not set from config.sh
+if [ -z "$SM_CONDA_PREFIX" ]
+then
+    export SM_CONDA_PREFIX=$DATADIR/conda
+fi
 
 # check required arguments
 if [ -z "$GENOME" ]

@@ -1,16 +1,16 @@
 #!/bin/bash
-# make a table with coverage information
+# make a table with coverage information for a bam file
 # Required positional arguments:
-# - files in bam format to process
+# Required positional arguments:
+# - input file in bam format to process
+# - output filename
 
 # stop if a command fails (non-zero exit status)
 set -e
 
->coverage.tab
-for i in "$@"; do
-    root=`basename $i .bam`
-    coverage=`samtools coverage $i -H`
-    echo $root $coverage >> coverage.tab
-done
+BAMFILE=$1
+OUTFILE=$2
 
-sort -k1,1 -V coverage.tab | sed 1i"sampleID\treference\tstartpos\tendpos\tnumreads\tcovbases\tcoverage\tmeandepth\tmeanbaseq\tmeanmapq" > results/coverage.raw.tab
+root=`basename $BAMFILE .bam`
+coverage=`samtools coverage $BAMFILE -H`
+echo $root $coverage > $OUTFILE

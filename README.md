@@ -27,7 +27,8 @@ This config file contains environment variables used by the pipeline.
 - `FOREGROUND_MODE` - Runs snakemake in the foreground.
   - Values "Y" and "N".  Defaults to "N"
   - This feature is for Slurm clusters that do not support `sacct` on worker nodes
-
+- `SM_CONDA_PREFIX` - Environment variable to overide the conda cache directory.
+  - Defaults to `conda` within the data directory.
 
 ### Snakemake Environment
 Snakemake must be installed in a conda environment named `snakemake`.

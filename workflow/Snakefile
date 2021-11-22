@@ -171,23 +171,43 @@ rule run_depth_coverage:
 
 rule create_coverage_table:
     message: "Make a table with coverage information {input}."
-    input: expand("create_bam_from_sam/{sample}.bam", sample=SAMPLES)
-    output: "results/coverage.raw.tab"
+    input: "create_bam_from_sam/{sample}.bam"
+    output: "create_coverage_table/{sample}_coverage.raw.tab"
     conda: "envs/environment.yml"
-    log: "logs/create_coverage_table.log"
+    log: "logs/create_coverage_table/{sample}.log"
     params:
         script=srcdir("../scripts/create-coverage-table.sh")
-    shell: "{params.script} {input} &>{log}"
+    shell: "{params.script} {input} {output} &>{log}"
+
+rule merge_coverage_table:
+    message: "Merge coverage information {input}."
+    input: expand("create_coverage_table/{sample}_coverage.raw.tab", sample=SAMPLES)
+    output: "results/coverage.raw.tab"
+    conda: "envs/environment.yml"
+    log: "logs/merge_coverage_table.log"
+    params:
+        script=srcdir("../scripts/merge-coverage-table.sh")
+    shell: "{params.script} {input} > {output} 2>{log}"
 
 rule create_coverage_bqsr_table:
     message: "Make a table with BQSR coverage information {input}."
-    input: expand("{sample}.bqsr.bam", sample=SAMPLES)
+    input: "{sample}.bqsr.bam"
+    output: "create_coverage_bqsr_table/{sample}_coverage.gatk.tab"
+    conda: "envs/environment.yml"
+    log: "logs/create_coverage_bqsr_table/{sample}.log"
+    params:
+        script=srcdir("../scripts/create-coverage-table.sh")
+    shell: "{params.script} {input} {output} &>{log}"
+
+rule merge_coverage_bqsr_table:
+    message: "Merge coverage information {input}."
+    input: expand("create_coverage_bqsr_table/{sample}_coverage.gatk.tab", sample=SAMPLES)
     output: "results/coverage.gatk.tab"
     conda: "envs/environment.yml"
-    log: "logs/create_coverage_bqsr_table.log"
+    log: "logs/merge_coverage_bqsr_table.log"
     params:
-        script=srcdir("../scripts/create-coverage-bqsr-table.sh")
-    shell: "{params.script} {input} &>{log}"
+        script=srcdir("../scripts/merge-coverage-table.sh")
+    shell: "{params.script} {input} > {output} 2>{log}"
 
 rule run_haplotype_caller:
     message: "HAPLOTYPE CALLER: Call germline SNPs and indels via local re-assembly of haplotypes {input.bamfile}."

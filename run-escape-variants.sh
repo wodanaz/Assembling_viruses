@@ -38,6 +38,7 @@ export SNAKEMAKE_PROFILE=$(readlink -e slurm/)
 export DOWNLOAD_INPUT_DATA=Y
 export UPLOAD_OUTPUT_DATA=Y
 export FOREGROUND_MODE=N
+export SNAKEMAKE_REPORT=Y
 
 while getopts "g:d:i:m:w:j:D:sSke:" OPTION; do
     case $OPTION in

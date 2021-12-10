@@ -23,3 +23,10 @@ snakemake \
     --directory $SNAKEMAKE_DIR \
     --use-conda --conda-prefix $SM_CONDA_PREFIX \
     --profile $SNAKEMAKE_PROFILE
+
+if [ "$SNAKEMAKE_REPORT" == "Y" ]
+then
+    REPORT_NAME=results/report-$(date +"%Y-%m-%d-%T").html
+    echo "Creating snakemake report $REPORT_NAME"
+    snakemake --report $REPORT_NAME --directory $SNAKEMAKE_DIR
+fi

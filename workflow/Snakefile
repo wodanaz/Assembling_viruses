@@ -28,11 +28,12 @@ rule remove_adapters:
     message: "Remove Nextera Adapters {input}."
     input: lambda wildcards: SAMPLE_TO_FILENAME[wildcards.prefix]
     output: "{prefix}_trimmed.fq.gz"
+    threads: 4
     conda: "envs/environment.yml"
     log: "logs/remove_adapters/{prefix}.log"
     params:
          script=srcdir("../scripts/remove-nextera-adapters.sh")
-    shell: "{params.script} {input} {output} &>{log}"
+    shell: "TGCORES={threads} {params.script} {input} {output} &>{log}"
 
 rule map_bwa_cleaned_libs:
     message: "Map using BWA with the cleaned libraries {input.readfile}."

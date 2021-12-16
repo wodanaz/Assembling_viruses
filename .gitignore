@@ -3,3 +3,4 @@ config.sh
 resources/**
 !NC_045512.fasta
 .snakemake
+smprofile/config.yaml

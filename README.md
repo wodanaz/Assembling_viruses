@@ -141,3 +141,36 @@ Then run the sbatch script like so:
 sbatch ev.sh
 ```
 If the environment module is not available on your cluster remove the `module load Anaconda3/2019.10-gcb02` line and setup conda.
+
+
+## Using local storage on a single node
+The pipeline can be run on single Slurm node utilizing local storage.
+Using this mode may help if a Slurm cluster's shared storage is a bottleneck.
+When using this mode snakemake, conda environments, input data, and intermediate data will all be stored on local storage.
+Only the output files and top level logs will stored on the shared storage.
+The top level log files must be on shared storage for the inital sbatch job to run.
+
+### Setup config
+Running in the single node mode requires special configuration.
+To create the config files run `./setup-config.sh` and answer the prompts.
+This script creates/replaces the contents of the `config.sh` and `smprofile/config.yaml` files.
+The script will prompt for the following items:
+- nodename - the node where all jobs will be run
+- scratch base directory - directory where , account, partition
+- account - Slurm account to use for the jobs
+- partition - Slurm partition to use for the jobs (must include the node specified above)
+
+
+### Setup miniconda3
+Miniconda3 must be installed on the local(scratch) storage on the node to run the workflow.
+The Snakemake and DukeDSClient environments installed in the appropriate environments within the miniconda3 installation.
+
+### Running on a single node
+To run on a single node requires specifing the optional `-o` output directory argument.
+This argument specifies the location for output files.
+So if `/scratch/user1/data` is the local storage path and `/hpc/group/mygroup/user1` is the shared output files path.
+The pipeline could be run on project `CVTestSamples` with 120 jobs like so:
+```
+./run-escape-variants.sh -d /scratch/user1/data -o /hpc/group/mygroup/user1 -i CVTestSamples -j 120
+```
+

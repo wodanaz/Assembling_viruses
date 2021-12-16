@@ -1,8 +1,16 @@
 restart-times: 3
 jobscript: "slurm-jobscript.sh"
-cluster: "slurm-submit.py"
+cluster:
+  mkdir -p logs/{rule} &&
+  sbatch
+    --parsable
+    --cpus-per-task={threads}
+    --mem={resources.mem_mb}
+    --job-name=sm-{rule}-{wildcards}
+default-resources:
+  - mem_mb=1000
 cluster-status: "slurm-status.py"
-max-jobs-per-second: 1
+max-jobs-per-second: 10
 max-status-checks-per-second: 10
 local-cores: 1
 latency-wait: 60

@@ -9,6 +9,7 @@
 # - LOGDIR - directory to hold log files
 #
 #SBATCH --job-name=ev-staging-pipeline
+#SBATCH --cpus-per-task=2
 
 # stop if a command fails (non-zero exit status)
 set -e

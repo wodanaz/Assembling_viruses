@@ -47,10 +47,10 @@ while getopts "g:d:o:i:m:w:j:D:sSke:" OPTION; do
         export GENOME=$(readlink -e $OPTARG)
         ;;
     d)
-        export DATADIR=$(readlink -e $OPTARG)
+        export DATADIR=$(readlink -m $OPTARG)
         ;;
     o)
-        OUTPUT_DATADIR=$(readlink -e $OPTARG)
+        OUTPUT_DATADIR=$(readlink -m $OPTARG)
         ;;
     i)
         export PROJECTNAME=$OPTARG

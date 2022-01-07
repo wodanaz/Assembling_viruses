@@ -9,7 +9,6 @@
 # - LOGDIR - directory to hold log files
 #
 #SBATCH --job-name=ev-staging-pipeline
-#SBATCH --cpus-per-task=2
 
 # stop if a command fails (non-zero exit status)
 set -e
@@ -18,7 +17,15 @@ echo "Escape Variants Starting"
 date
 echo ""
 
-# Activate a conda environment if configured by config.sh
+# make input results directory if necessary
+mkdir -p INPUTDIR
+# make output results directory if necessary
+mkdir -p $OUTDIR
+# create temp snakemake working directory <datadir>/output/<projectname>_snakemake
+mkdir -p $SNAKEMAKE_DIR
+# create directory to hold conda environments if necessary
+mkdir -p $SM_CONDA_PREFIX
+
 if [ ! -z "$ACTIVATE_CONDA_PATH" ]
 then
    echo "Activate $ACTIVATE_CONDA_PATH."

@@ -18,6 +18,12 @@ echo "Escape Variants Starting"
 date
 echo ""
 
+# Activate a conda environment if configured by config.sh
+if [ ! -z "$ACTIVATE_CONDA_PATH" ]
+then
+   echo "Activate $ACTIVATE_CONDA_PATH."
+   eval "$($ACTIVATE_CONDA_PATH shell.bash hook)"
+fi
 
 if [ "$DOWNLOAD_INPUT_DATA" == "Y" ]
 then

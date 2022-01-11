@@ -28,7 +28,7 @@ rule remove_adapters:
     message: "Remove Nextera Adapters {input}."
     input: lambda wildcards: SAMPLE_TO_FILENAME[wildcards.prefix]
     output: "{prefix}_trimmed.fq.gz"
-    threads: 4
+    threads: 1
     conda: "envs/environment.yml"
     log: "logs/remove_adapters/{prefix}.log"
     params:

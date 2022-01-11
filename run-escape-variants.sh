@@ -9,6 +9,7 @@ ShowHelp()
    echo "usage: $0 -d datadir -i inputproject [-g genome] [-j numjobs] [-e email] [-s] [-S] [-k]"
    echo "options:"
    echo "-d datadir       directory used to hold input and output files - required"
+   echo "-o outdir        specify where to store output files - optional overrides datadir for output location"
    echo "-i inputproject  project name to download - required"
    echo "-g genome        *.fasta genome to use - defaults to resources/NC_045512.fasta"
    echo "-j numjobs       number of array jobs to run in parallel - defaults to 10"
@@ -40,13 +41,16 @@ export UPLOAD_OUTPUT_DATA=Y
 export FOREGROUND_MODE=N
 export SNAKEMAKE_REPORT=Y
 
-while getopts "g:d:i:m:w:j:D:sSke:" OPTION; do
+while getopts "g:d:o:i:m:w:j:D:sSke:" OPTION; do
     case $OPTION in
     g)
         export GENOME=$(readlink -e $OPTARG)
         ;;
     d)
-        export DATADIR=$(readlink -e $OPTARG)
+        export DATADIR=$(readlink -m $OPTARG)
+        ;;
+    o)
+        OUTPUT_DATADIR=$(readlink -m $OPTARG)
         ;;
     i)
         export PROJECTNAME=$OPTARG
@@ -69,17 +73,21 @@ while getopts "g:d:i:m:w:j:D:sSke:" OPTION; do
     esac
 done
 
+# check that the config.sh has been setup
+if [ -f config.sh ]
+then
+   source config.sh
+else
+   echo "ERROR: Missing config.sh config file."
+   echo "To fix run:"
+   echo "  cp example-config.sh config.sh"
+   echo ""
+   exit 1
+fi
+
 ####################################
 ### Check command line arguments ###
 ####################################
-
-# declare directory names
-INPUT_DATADIR=$DATADIR/input
-export INPUTDIR=$INPUT_DATADIR/$PROJECTNAME
-OUTPUT_DATADIR=$DATADIR/output
-export OUTDIR=$OUTPUT_DATADIR/$PROJECTNAME
-export SNAKEMAKE_DIR=${OUTDIR}_snakemake
-export LOGDIR="$SNAKEMAKE_DIR/logs"
 
 # set snakemake conda directory if not set from config.sh
 if [ -z "$SM_CONDA_PREFIX" ]
@@ -110,40 +118,22 @@ then
    exit 1
 fi
 
-# check that the config.sh has been setup
-if [ -f config.sh ]
-then
-   source config.sh
-else
-   echo "ERROR: Missing config.sh config file."
-   echo "To fix run:"
-   echo "  cp example-config.sh config.sh"
-   echo ""
-   exit 1
-fi
-
 # enable USE_MODULES if not explicitly turned off by config.sh
 if [ "$USE_MODULES" != "N" ]
 then
    export USE_MODULES=Y
 fi
 
-##########################
-### Create directories ###
-##########################
-
-# Create directories
-# make base input directory if necessary
-mkdir -p $INPUT_DATADIR
-# make base output directory if necessary
-mkdir -p $OUTPUT_DATADIR
-# make output results directory if necessary
-mkdir -p $OUTDIR
-# create temp snakemake working directory <datadir>/output/<projectname>_snakemake
-mkdir -p $SNAKEMAKE_DIR
-
-# create directory to hold conda environments if necessary
-mkdir -p $SM_CONDA_PREFIX
+# declare directory names
+export INPUTDIR=$DATADIR/input/$PROJECTNAME
+export SNAKEMAKE_DIR=$DATADIR/output/${PROJECTNAME}_snakemake
+if [ -z "$OUTPUT_DATADIR" ]
+then
+    export OUTDIR="$DATADIR/output/$PROJECTNAME"
+else
+    export OUTDIR="$OUTPUT_DATADIR/$PROJECTNAME"
+fi
+export LOGDIR="$OUTDIR/logs"
 
 # make output logs directory if necessary
 mkdir -p $LOGDIR

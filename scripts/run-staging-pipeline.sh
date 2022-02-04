@@ -63,7 +63,8 @@ then
     then
         bash scripts/upload-output-data.sh $OUTDIR ${PROJECTNAME}_results
     else
-        srun --output="${LOGDIR}/upload-output-data-%j.out" scripts/upload-output-data.sh $OUTDIR ${PROJECTNAME}_results
+        mkdir -p logs
+        srun --output="logs/upload-output-data-%j.out"  scripts/upload-output-data.sh $OUTDIR ${PROJECTNAME}_results
     fi
     echo ""
 fi
